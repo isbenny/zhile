@@ -1,0 +1,15 @@
+# Put the following log_format and map inside nginx.conf's http {} context.
+# Do not paste them inside the website's server {} block.
+log_format zhile_downloads escape=json
+  '{"time":"$time_iso8601","path":"$uri","status":$status,"bytes":$body_bytes_sent}';
+map $uri $zhile_apk_request {
+  default 0;
+  ~^/downloads/zhile-(arm64|x86_64|universal)\.apk$ 1;
+}
+
+# In the music.cnxwkj.com server {} block, adapt the log path to your panel.
+# access_log /var/log/nginx/zhile-downloads.jsonl zhile_downloads if=$zhile_apk_request;
+# location = /update.json { add_header Cache-Control "no-cache" always; try_files $uri =404; }
+# location /downloads/ { add_header Cache-Control "no-cache" always; try_files $uri =404; }
+# No reverse proxy to the local application's /music API; this site is static.
+# Keep the panel's existing security logging separately. This is not a replacement.

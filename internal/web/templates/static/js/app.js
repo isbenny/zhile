@@ -1472,7 +1472,7 @@ function initSourceSelectorCollapse(root = document) {
     }
   } catch (_) {}
   if (typeof collapsed !== "boolean") {
-    collapsed = isMobile;
+    collapsed = isMobile || !!selector.closest(".search-landing-search");
   }
   applySourceSelectorCollapsed(selector, collapsed);
 }
@@ -1873,6 +1873,9 @@ function formatSizeBytes(bytes) {
 
 function initializePageContent(root = document) {
   initializeDiscovery(root);
+  if (window.ZHILE_LOCAL_ONLY) {
+    const search=root.querySelector('#search-keyword');if(search)search.placeholder='搜索本地歌曲、歌手或歌单';
+  }
   resetAutoSwitchInvalidState();
   bindSourceSelectorButtons(root);
   initSourceSelectorCollapse(root);
@@ -2892,10 +2895,10 @@ document.addEventListener("DOMContentLoaded", function () {
     cards.forEach(card => {
         const coverWrap = card.querySelector('.cover-wrapper');
         if (!coverWrap) return;
-        
+
         coverWrap.style.cursor = 'pointer';
         coverWrap.title = '点击生成视频';
-        
+
         coverWrap.onclick = (e) => {
             e.stopPropagation();
             if (window.VideoGen) {
@@ -3467,7 +3470,7 @@ function ensureLocalMusicPaginationBar() {
   bar.id = "localMusicPagePagination";
   bar.className = "pagination-bar";
   bar.dataset.shortcutHint = "PgUp / PgDn";
-  bar.title = "Shortcut: PgUp / PgDn";
+  bar.setAttribute("aria-label", "列表翻页");
   list.insertAdjacentElement("afterend", bar);
   return bar;
 }
@@ -3491,7 +3494,7 @@ function renderLocalMusicPagePagination(page, totalPages) {
         </button>
         <span class="pagination-text">第 ${page} / ${totalPages} 页</span>
         ${renderPageJump(page, totalPages)}
-        <span class="pagination-shortcut-hint">PgUp / PgDn</span>
+
         <button type="button" class="ctrl-btn primary" onclick="goToPage(${page + 1})" ${page >= totalPages ? "disabled" : ""}>
             下一页 <i class="fa-solid fa-chevron-right"></i>
         </button>
@@ -3836,6 +3839,7 @@ async function inspectSong(card, controller = null) {
   }
 
   try {
+    if (window.ZHILE_MEDIA_LOCAL_ONLY && !isLocalMusicSourceValue(source)) return;
     const response = await fetch(`${API_ROOT}/inspect?${params.toString()}`, {
       signal,
     });
@@ -5019,7 +5023,7 @@ async function checkAppUpdate(options = {}) {
 }
 
 function maybeAutoCheckUpdate() {
-  if (!webSettings.autoCheckUpdate) return;
+  if (window.ZHILE_LOCAL_ONLY || !webSettings.autoCheckUpdate) return;
   const key = "musicdl:update_checked_at";
   const now = Date.now();
   try {
@@ -5051,7 +5055,7 @@ function openUpdateModal(updateInfo = null) {
       title.textContent = `关于 知乐 v${updateInfo.current_version || "-"}`;
     }
     if (summary) {
-      summary.textContent = `当前版本 v${updateInfo.current_version || "-"}，GitHub 最新版本 v${updateInfo.latest_version || "-"}`;
+      summary.textContent = `当前版本 v${updateInfo.current_version || "-"}，最新发布版本 v${updateInfo.latest_version || "-"}`;
     }
   }
 
@@ -5062,9 +5066,10 @@ async function openAboutAppModal() {
   const title = document.getElementById("appUpdateTitle");
   if (title) title.textContent = "关于 知乐";
   const summary = document.getElementById("appUpdateSummary");
-  if (summary) summary.textContent = "正在读取 GitHub 版本信息...";
+  if (summary) summary.textContent = "正在读取版本信息...";
   openUpdateModal();
-  await checkAppUpdate({ showNoUpdate: true, silent: true });
+  if (!window.ZHILE_LOCAL_ONLY) await checkAppUpdate({ showNoUpdate: true, silent: true });
+  else if (summary) summary.textContent="公开版 · 本地音乐。主动检查更新时会连接知乐服务器，失败时回退 GitHub。";
 }
 
 function closeUpdateModal() {
@@ -5362,7 +5367,7 @@ function readPlaybackHistory() {
     const parsed = JSON.parse(localStorage.getItem(PLAYBACK_HISTORY_STORAGE_KEY) || "[]");
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .filter((entry) => entry && entry.name && entry.source && entry.id)
+      .filter((entry) => entry && entry.name && entry.source && entry.id && (!window.ZHILE_LOCAL_ONLY || isLocalMusicSourceValue(entry.source)))
       .slice(0, PLAYBACK_HISTORY_LIMIT);
   } catch (_) {
     return [];
@@ -5647,7 +5652,7 @@ async function openLatestUpdatePage(target = "download") {
     if (popup && !popup.closed) {
       popup.close();
     }
-    showToast("无法打开下载页", "没有可用的 GitHub 链接", "error");
+    showToast("无法打开下载页", "没有可用的下载链接", "error");
     return;
   }
   url = proxiedGithubURL(url, proxyURL, proxyEnabled);
@@ -7798,7 +7803,7 @@ function playbackEntryFromSong(song) {
   return {
     name:playback.name, artist:playback.artist, album:playback.album || "",
     url:buildStreamURL(playback.id, playback.source, playback.name, playback.artist, playback.album || "", playback.cover || "", playback.extra || ""),
-    cover:song.cover || "", lrc:lyrics.line, raw_lrc:lyrics.auto, theme:"#1ed760",
+    cover:safeCoverURL(song.cover) || API_ROOT+"/icon.png", lrc:lyrics.line, raw_lrc:lyrics.auto, theme:"#1ed760",
     custom_id:playback.id, original_id:song.id, original_source:song.source,
     source:playback.source, duration:playback.duration || 0, extra:playback.extra || "",
   };
@@ -7861,7 +7866,7 @@ async function expandPlaybackQueue({local, url, totalPages}) {
   }
 }
 
-function playAllAndJumpTo(btn) {
+function playAllAndJumpTo(btn, {restart = false} = {}) {
   const currentCard = btn.closest(".song-card");
   const allCards = Array.from(document.querySelectorAll(".song-card"));
   const clickedIndex = allCards.indexOf(currentCard);
@@ -7871,7 +7876,7 @@ function playAllAndJumpTo(btn) {
   const clickedId = currentCard.dataset.id;
   const isActuallyPlaying = ap?.audio && !ap.audio.paused;
 
-  if (currentPlayingId && currentPlayingId === clickedId && isActuallyPlaying) {
+  if (!restart && currentPlayingId && currentPlayingId === clickedId && isActuallyPlaying) {
     ap.pause();
     try {
       ap.seek(0);
@@ -8889,12 +8894,25 @@ async function addLocalMusicToCollection(trackId, btn) {
   }
 }
 
-function playAllSongs() {
-  const firstPlayBtn = document.querySelector(".song-card .btn-play");
-  if (firstPlayBtn) {
-    playAllAndJumpTo(firstPlayBtn);
-  } else {
-    showNotice("列表为空，无法播放");
+let playAllPending = false;
+async function playAllSongs() {
+  if (playAllPending) return;
+  playAllPending = true;
+  const button = document.querySelector('.list-play-all');
+  if (button) { button.disabled = true; button.setAttribute('aria-busy','true'); }
+  try {
+    const state = getActivePaginationState();
+    if (state?.currentPage > 1) {
+      const firstPage = new URL(location.href); firstPage.searchParams.set('page','1');
+      const loaded = await navigateTo(firstPage.toString(), {scroll:false});
+      if (loaded === false) return;
+    }
+    const firstPlayBtn = document.querySelector('.song-card .btn-play');
+    if (firstPlayBtn) playAllAndJumpTo(firstPlayBtn, {restart:true});
+    else showNotice('列表为空，无法播放');
+  } finally {
+    playAllPending = false;
+    if (button?.isConnected) { button.disabled = false; button.removeAttribute('aria-busy'); }
   }
 }
 
@@ -9071,10 +9089,10 @@ function setImportCollectionButtonState(btn, imported) {
 
   btn.disabled = !!imported;
   if (imported) {
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> 已导入';
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> 已加入';
     btn.style.opacity = "0.85";
   } else {
-    btn.innerHTML = '<i class="fa-solid fa-download"></i> 导入本地';
+    btn.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i> 加入歌单';
     btn.style.opacity = "";
   }
 }
@@ -9118,7 +9136,7 @@ function importCollectionFromButton(btn) {
   };
 
   if (!payload.source || !payload.external_id) {
-    showNotice("缺少导入参数");
+    showNotice("缺少歌单信息");
     return;
   }
 
@@ -9142,14 +9160,14 @@ function importCollectionFromButton(btn) {
       setImportCollectionButtonState(btn, true);
       showNotice(
         res.duplicate
-          ? "该歌单/专辑已在本地列表中"
-          : "导入成功，已加入本地歌单列表",
+          ? "该歌单/专辑已在我的音乐中"
+          : "已加入歌单，可在“我的音乐”中查看",
       );
     })
     .catch(() => {
       btn.disabled = false;
       btn.style.opacity = "";
-      showNotice("导入失败，请稍后重试");
+      showNotice("加入失败，请稍后重试");
     });
 }
 
@@ -9190,7 +9208,9 @@ function refreshAddToCollectionList() {
   fetch(API_ROOT + "/collections")
     .then((r) => r.json())
     .then((data) => {
-      if (!data || data.length === 0) {
+      if (!Array.isArray(data)) throw new Error("歌单列表格式错误");
+      data = [{id: null, name: "Liked Songs · 我喜欢的音乐", system_key: "liked"}, ...data.filter(col => col.system_key !== "liked")];
+      if (data.length === 0) {
         container.innerHTML =
           '<div style="text-align: center; color: #a0aec0; padding: 20px;">暂无歌单，请点击上方“新建”创建</div>';
         return;
@@ -9202,12 +9222,12 @@ function refreshAddToCollectionList() {
         item.style.cursor = "default";
 
         let cvr = col.cover;
-        if (!cvr) cvr = `https://picsum.photos/seed/col_${col.id}/400/400`;
+        if (!cvr) cvr = API_ROOT + "/icon.png";
 
         item.innerHTML = `
                     <div class="col-clickable-area" style="display:flex; align-items:center; flex:1; overflow:hidden; cursor:pointer;" title="收藏到此歌单">
-                        <img src="${cvr}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;margin-right:12px;">
-                        <div class="collection-name" style="margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${col.name}</div>
+                        ${col.system_key === "liked" ? '<span class="liked-art picker-liked-art" aria-hidden="true"><i class="fa-solid fa-heart"></i></span>' : `<img src="${escapeHTML(safeCoverURL(cvr))}" alt="" style="width:40px;height:40px;border-radius:6px;object-fit:cover;margin-right:12px;">`}
+                        <div class="collection-name" style="margin:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHTML(col.name)}</div>
                     </div>
                     <div style="display:flex; gap:6px; margin-left: 10px;">
                         <button class="col-action-btn btn-edit" title="编辑歌单"><i class="fa-solid fa-pen"></i></button>
@@ -9215,7 +9235,10 @@ function refreshAddToCollectionList() {
                     </div>
                 `;
 
-        item.querySelector(".col-clickable-area").onclick = () => {
+        item.querySelector(".col-clickable-area").onclick = async () => {
+          if (col.system_key === "liked") {
+            try { col.id = await ensureLikedSongs(); } catch (error) { showNotice(error.message); return; }
+          }
           if (pendingBatchFavIds && pendingBatchFavIds.length > 0) {
             submitBatchAddLocalMusicToCollection(col.id);
           } else if (pendingBatchFavSongs && pendingBatchFavSongs.length > 0) {
@@ -9238,6 +9261,10 @@ function refreshAddToCollectionList() {
           deleteCollectionFromModal(col.id);
         };
 
+        if (col.system_key === "liked") {
+          item.querySelector(".btn-edit").remove();
+          item.querySelector(".btn-del").remove();
+        }
         container.appendChild(item);
       });
     })
@@ -9417,7 +9444,7 @@ async function restorePlaybackSession() {
     // Never replace a playlist selected while the asynchronous read was pending.
     if (revision !== playbackSessionRevision || ap.list.audios.length) return;
     if (session?.version !== 1 || !Array.isArray(session.songs)) return;
-    const songs = session.songs.filter(song => song && typeof song.id === "string" && song.id && typeof song.source === "string" && song.source);
+    const songs = session.songs.filter(song => song && typeof song.id === "string" && song.id && typeof song.source === "string" && song.source && (!window.ZHILE_MEDIA_LOCAL_ONLY || isLocalMusicSourceValue(song.source)));
     if (!songs.length) return;
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(PLAYBACK_POSITION_KEY) || "{}"); } catch (_) {}
@@ -9605,9 +9632,10 @@ function decorateSourceIdentities(root=document) {
 
 function discoverMood(query, type='playlist') {
   const url=new URL(API_ROOT+'/search',location.origin);
+  if (window.ZHILE_LOCAL_ONLY) type='song';
   url.searchParams.set('q',query);url.searchParams.set('type',type);url.searchParams.set('page','1');
   const chosen=[...document.querySelectorAll('.source-checkbox:checked')].filter(el=>type!=='playlist'||el.dataset.playlistSupported==='true').map(el=>el.value);
-  (chosen.length?chosen:['netease','qq']).forEach(source=>url.searchParams.append('sources',source));
+  (window.ZHILE_LOCAL_ONLY?['local']:(chosen.length?chosen:['netease','qq'])).forEach(source=>url.searchParams.append('sources',source));
   void navigateTo(url.toString(),{scrollToResults:true});
 }
 
@@ -9623,17 +9651,23 @@ function syncMainNavigation() {
 }
 
 function safeCoverURL(value) {
-  try { const u=new URL(value,location.origin);return ['https:','http:'].includes(u.protocol)?u.href:''; } catch(_){return '';}
+  try { const u=new URL(value,location.origin);if(window.ZHILE_LOCAL_ONLY && u.origin!==location.origin)return '';return ['https:','http:'].includes(u.protocol)?u.href:''; } catch(_){return '';}
 }
 
 let discoveryRequest;
 function initializeDiscovery(root=document) {
   decorateSourceIdentities(root);syncMainNavigation();
+  const quickRoutes = {goToRecommend:'/recommend',openCollectionManager:'/my_collections',openLocalMusicPage:'/local_music_page',goToPlaylistCategories:'/playlist_categories',goToTopLists:'/toplists',goToUserPlaylists:'/user_playlists'};
+  root.querySelectorAll('.quick-actions button').forEach(button=>{
+    const action=button.getAttribute('onclick')?.split('(')[0];
+    button.setAttribute('aria-pressed',String(location.pathname === API_ROOT + quickRoutes[action]));
+  });
   discoveryRequest?.abort();
   const home=root.querySelector('#discovery-home');
   if(!home)return;
   renderHomeRecent(home);
   const rail=home.querySelector('#home-playlists');
+  if(!rail)return;
   const controller=new AbortController();discoveryRequest=controller;
   const timeout=setTimeout(()=>controller.abort(),8000);
   fetch(API_ROOT+'/home_feed',{signal:controller.signal})
@@ -9685,7 +9719,7 @@ function renderHomeRecent(root=document) {
 }
 
 async function shareZhile() {
-  const url='https://github.com/isbenny/zhile/releases/latest';
+  const url='https://music.cnxwkj.com';
   const text='知乐 Zhile：搜索、聆听，把喜欢的音乐收进自己的歌单。';
   if(navigator.share){try{await navigator.share({title:'知乐 Zhile',text,url});return;}catch(error){if(error.name==='AbortError')return;}}
   try{await navigator.clipboard.writeText(text+'\n'+url);showToast('分享链接已复制','粘贴给朋友，就能打开知乐下载页。','success');}
@@ -9701,4 +9735,24 @@ function addCurrentTrackToCollection() {
   window.VideoGen.close();
   document.getElementById('addToCollectionModal').style.display='flex';
   refreshAddToCollectionList();
+}
+
+async function ensureLikedSongs() {
+  const response = await fetch(API_ROOT + '/collections/liked', {method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+  const data = await response.json();
+  if (!response.ok || !data.id) throw new Error(data.error || '暂时无法打开我喜欢的音乐');
+  return data.id;
+}
+async function openLikedSongs(button) {
+  if (button?.disabled) return;
+  if (button) button.disabled = true;
+  try { const id = await ensureLikedSongs(); await navigateTo(API_ROOT + '/collection?id=' + encodeURIComponent(id)); }
+  catch (error) { showNotice(error.message); }
+  finally { if (button) button.disabled = false; }
+}
+function openLibraryActions(button) {
+  const entries = [];
+  if (button.dataset.editable === 'true') entries.push({label:'编辑歌单',icon:'fa-solid fa-pen',run:()=>showEditCollectionModalFromButton(button)});
+  entries.push({label:'移除歌单',icon:'fa-solid fa-trash-can',danger:true,divider:true,run:()=>deleteCollection(button.dataset.id)});
+  openActionSheet({title:button.dataset.name,subtitle:'我的音乐 · 歌单操作',cover:button.dataset.cover,entries,trigger:button});
 }

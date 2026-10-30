@@ -35,3 +35,11 @@ were generated for Zhile. Actual playlist covers remain supplied by their source
 Platform identification icon origins and notices are listed in
 internal/web/templates/static/images/sources/NOTICE.txt; they are not claimed
 as Zhile's original marks or licensed exclusively under the code license.
+
+Public edition review (2026-10-30):
+The normal Web/Android preview retains online search, recommendations, playback
+and download. Source availability varies; use only content you are entitled to access. No third-party catalogue is authorized by
+this code licence. Demonstration materials are for learning and technical
+exchange; this statement imposes no additional restrictions on AGPL rights.
+Copyright/privacy contact: csuyangxing@gmail.com.
+A takedown channel does not replace prior rights clearance.

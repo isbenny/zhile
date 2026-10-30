@@ -112,6 +112,14 @@ func publicWebSettings() core.WebSettings {
 	settings.WebDAVPassword = ""
 	// 签名服务 token 等同取流能力，不回显到页面（留空保存时保留旧值）。
 	settings.SodaSignerToken = ""
+	if publicLocalOnly {
+		settings.AutoSwitchInvalidSources = false
+		settings.AutoCacheOnPlay = false
+		settings.AutoCheckUpdate = false
+		settings.WebDAVEnabled = false
+		settings.GithubProxyEnabled = false
+		settings.VgExportVideo = false
+	}
 	return settings
 }
 
@@ -124,7 +132,7 @@ type webSettingsPayload struct {
 func publicWebSettingsPayload() webSettingsPayload {
 	return webSettingsPayload{
 		WebSettings:              publicWebSettings(),
-		SodaLocalSignerAvailable: core.LocalSodaSignerAvailable(),
+		SodaLocalSignerAvailable: !publicLocalOnly && core.LocalSodaSignerAvailable(),
 	}
 }
 
@@ -177,9 +185,9 @@ func playlistExtraValue(playlist model.Playlist, key string) string {
 
 func importCollectionHoverText(contentType string) string {
 	if contentType == collectionContentAlbum {
-		return "导入到本地歌单列表，保存为外部导入专辑；仅保存元数据，不保存具体歌曲明细。"
+		return "加入我的音乐，保留专辑来源与元数据。"
 	}
-	return "导入到本地歌单列表，保存为外部导入歌单；仅保存元数据，不保存具体歌曲明细。"
+	return "加入我的音乐，保留歌单来源与元数据。"
 }
 
 func playlistDetailURL(root string, searchType string, playlist model.Playlist) string {
@@ -364,6 +372,27 @@ func filterSongsForDisplay(songs []model.Song, settings core.WebSettings) []mode
 
 func renderIndex(c *gin.Context, songs []model.Song, playlists []model.Playlist, q string, selected []string, errMsg string, searchType string, playlistLink string, colID string, colName string, isLocalColPage bool, collectionKind string, importCollection *importCollectionMeta) {
 	allSrc := core.GetAllSourceNames()
+	if c.GetBool("PublicLocalOnly") {
+		allSrc = []string{"local"}
+		selected = []string{"local"}
+		localSongs := make([]model.Song, 0, len(songs))
+		for _, song := range songs {
+			if isLocalMusicSource(song.Source) {
+				localSongs = append(localSongs, song)
+			}
+		}
+		songs = localSongs
+		for i := range songs {
+			if !strings.HasPrefix(songs[i].Cover, RoutePrefix+"/") {
+				songs[i].Cover = ""
+			}
+		}
+		for i := range playlists {
+			if !strings.HasPrefix(playlists[i].Cover, RoutePrefix+"/") {
+				playlists[i].Cover = ""
+			}
+		}
+	}
 	desc := make(map[string]string)
 	for _, s := range allSrc {
 		desc[s] = core.GetSourceDescription(s)
@@ -463,6 +492,11 @@ func renderIndex(c *gin.Context, songs []model.Song, playlists []model.Playlist,
 		pageStartDisplay = pageStart + 1
 	}
 	c.HTML(200, "index.html", gin.H{
+		"PublicLocalOnly":         c.GetBool("PublicLocalOnly"),
+		"MediaLocalOnly":          publicLocalOnly,
+		"LikedCount":              c.GetInt("LikedCount"),
+		"CollectionCover":         c.GetString("CollectionCover"),
+		"IsLikedCollection":       c.GetBool("IsLikedCollection"),
 		"IsHome":                  c.GetBool("IsHome"),
 		"IsSearchLanding":         c.GetBool("IsSearchLanding"),
 		"Result":                  songs,
@@ -540,7 +574,11 @@ func StartDesktop(port string) {
 
 func StartWithOptions(port string, opts StartOptions) {
 	RoutePrefix = NormalizeBasePath(opts.BasePath)
-	core.CM.Load()
+	if publicLocalOnly {
+		opts.ListenHost = "127.0.0.1"
+	} else {
+		core.CM.Load()
+	}
 	if !opts.DisableAuth {
 		settings, err := core.GetWebAuthSettings()
 		if err != nil {
@@ -612,6 +650,11 @@ func StartWithOptions(port string, opts StartOptions) {
 		panic(fmt.Sprintf("load embedded vendor assets: %v", err))
 	}
 	api.StaticFS("/vendor", http.FS(vendorAssets))
+	if publicLocalOnly {
+		// This opt-in only applies to the desktop's loopback preview process.
+		onlineDiscovery := opts.ListenHost == "127.0.0.1" && os.Getenv("ZHILE_PREVIEW_ONLINE_DISCOVERY") == "1"
+		api.Use(distributionGuard(onlineDiscovery))
+	}
 	configAPI := bindAuthMiddleware(api, opts)
 	api.Static("/videos", videoDir)
 
@@ -681,7 +724,12 @@ func StartWithOptions(port string, opts StartOptions) {
 
 	queueContext, stopQueue := context.WithCancel(context.Background())
 	defer stopQueue()
-	if err := queue.Start(queueContext, processQueuedDownload); err != nil {
+	if err := queue.Start(queueContext, func(input core.DownloadTaskInput) (core.DownloadTaskResult, error) {
+		if publicLocalOnly {
+			return core.DownloadTaskResult{}, errors.New(publicRightsMessage)
+		}
+		return processQueuedDownload(input)
+	}); err != nil {
 		_ = listener.Close()
 		fmt.Fprintf(os.Stderr, "Start download queue: %v\n", err)
 		return

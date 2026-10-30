@@ -1,5 +1,5 @@
 {{define "search_box"}}
-<div class="search-box {{if .IsHome}}home-search{{end}} {{if .IsLocalColPage}}library-search{{end}}">
+<div class="search-box {{if or .ColID .ImportCollection}}detail-search{{end}} {{if .IsSearchLanding}}search-landing-search{{end}} {{if .IsHome}}home-search{{end}} {{if .IsLocalColPage}}library-search{{end}}">
     <header class="music-header">
         <h1><a href="{{.Root}}/" aria-label="知乐首页"><img src="{{.Root}}/icon.png" alt="" width="36" height="36" style="vertical-align:middle;border-radius:9px"> 知乐</a></h1>
         <nav class="desktop-app-nav" aria-label="主导航"><a href="{{.Root}}/" data-main-tab="home">首页</a><a href="{{.Root}}/?view=search" data-main-tab="search">搜索</a><a href="{{.Root}}/my_collections" data-main-tab="library">我的音乐</a></nav>
@@ -9,8 +9,9 @@
             <button type="button" onclick="toggleMobileUtilities(this)" aria-label="更多功能" aria-controls="utility-toolbar" aria-expanded="false"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
         </div>
     </header>
+    {{if .IsSearchLanding}}<div class="search-heading"><h2>搜索</h2><p>下一首喜欢的，从这里开始。</p></div>{{end}}
     {{if .IsHome}}<div class="home-greeting"><h2>今天，想听点什么？</h2><p>从一首歌，找到今天的心情。</p></div>{{end}}
-    {{if .IsLocalColPage}}<div class="home-greeting"><h2>我的音乐</h2><p>喜欢的旋律，慢慢收集。</p></div><div class="library-shortcuts"><button onclick="openLocalMusicPage()"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> 本地音乐</button><button onclick="openPlaybackHistoryModal()"><i class="fa-regular fa-clock" aria-hidden="true"></i> 最近播放</button><button onclick="goToUserPlaylists()"><i class="fa-solid fa-cloud" aria-hidden="true"></i> 平台歌单</button></div>{{end}}
+    {{if .IsLocalColPage}}<div class="home-greeting"><h2>我的音乐</h2><p>喜欢的旋律，慢慢收集。</p></div><div class="library-shortcuts"><button onclick="openLocalMusicPage()"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> 本地音乐</button><button onclick="openPlaybackHistoryModal()"><i class="fa-regular fa-clock" aria-hidden="true"></i> 最近播放</button><button class="public-online-action" data-online-only onclick="goToUserPlaylists()"><i class="fa-solid fa-cloud" aria-hidden="true"></i> 平台歌单</button></div>{{end}}
     <form action="{{.Root}}/search" method="get" id="search-form">
         <input type="hidden" name="page" value="1">
         <input type="hidden" name="page_size" id="page-size-hidden" value="{{.PageSize}}">
@@ -41,8 +42,8 @@
         </div>
 
         <div class="quick-actions">
-            <button type="button" class="btn-pill btn-pill-primary" onclick="goToRecommend()">
-                <i class="fa-solid fa-fire"></i> 每日推荐歌单
+            <button type="button" class="btn-pill btn-pill-primary" data-online-only onclick="goToRecommend()">
+                <i class="fa-solid fa-fire"></i> 每日推荐
             </button>
             <button type="button" class="btn-pill btn-pill-fav" onclick="openCollectionManager()">
                 <i class="fa-solid fa-folder-open"></i> 本地歌单
@@ -50,13 +51,13 @@
             <button type="button" class="btn-pill btn-pill-fav" onclick="openLocalMusicPage()">
                 <i class="fa-solid fa-music"></i> 本地音乐
             </button>
-            <button type="button" class="btn-pill btn-pill-category" onclick="goToPlaylistCategories()">
+            <button type="button" class="btn-pill btn-pill-category" data-online-only onclick="goToPlaylistCategories()">
                 <i class="fa-solid fa-table-cells-large"></i> 歌单分类
             </button>
-            <button type="button" class="btn-pill btn-pill-rank" onclick="goToTopLists()">
+            <button type="button" class="btn-pill btn-pill-rank" data-online-only onclick="goToTopLists()">
                 <i class="fa-solid fa-ranking-star"></i> 排行榜
             </button>
-            <button type="button" class="btn-pill btn-pill-mine" onclick="goToUserPlaylists()">
+            <button type="button" class="btn-pill btn-pill-mine" data-online-only onclick="goToUserPlaylists()">
                 <i class="fa-solid fa-heart"></i> 我的歌单
             </button>
         </div>

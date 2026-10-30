@@ -123,11 +123,14 @@ func checkLatestRelease(ctx context.Context, repoURL string, proxyEnabled bool, 
 		return updateCheckResponse{}, err
 	}
 
-	release, err := fetchLatestGitHubRelease(ctx, owner, repo, proxyEnabled, proxyURL)
+	release, selfHosted, err := fetchConfiguredRelease(ctx, owner, repo, runtime.GOOS, proxyEnabled, proxyURL)
 	if err != nil {
 		return updateCheckResponse{}, err
 	}
 
+	if selfHosted {
+		proxyEnabled = false // The GitHub proxy must never wrap our own download host.
+	}
 	latest := normalizeVersion(release.TagName)
 	if latest == "" {
 		latest = normalizeVersion(release.Name)
@@ -362,6 +365,13 @@ func preferredUpdateAssetIndex(assets []struct {
 }) int {
 	if len(assets) == 0 {
 		return -1
+	}
+	if runtime.GOOS == "android" {
+		names := make([]string, len(assets))
+		for i, asset := range assets {
+			names[i] = asset.Name
+		}
+		return preferredAndroidAsset(names, runtime.GOARCH)
 	}
 	bestIndex := 0
 	bestScore := updateAssetPreferenceScore(assets[0].Name)

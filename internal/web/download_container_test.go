@@ -232,7 +232,7 @@ func TestDeleteCollectionRollsBackSavedSongsOnFailure(t *testing.T) {
 	}
 }
 
-func TestWholeDownloadButtonsRenderOnCardsAndDetail(t *testing.T) {
+func TestWholeDownloadButtonsOnlyRenderOnDetail(t *testing.T) {
 	for _, kind := range []string{"playlist", "album"} {
 		t.Run(kind, func(t *testing.T) {
 			r, _ := setupContainerTests(t)
@@ -246,8 +246,15 @@ func TestWholeDownloadButtonsRenderOnCardsAndDetail(t *testing.T) {
 			for _, path := range []string{"/test-card", "/test-detail"} {
 				w := httptest.NewRecorder()
 				r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
-				if w.Code != 200 || !bytes.Contains(w.Body.Bytes(), []byte(`data-container-kind="`+kind+`"`)) || !bytes.Contains(w.Body.Bytes(), []byte(`data-container-id="remote1"`)) {
-					t.Fatal(path, w.Code, w.Body.String())
+				if w.Code != 200 {
+					t.Fatal(path, w.Code)
+				}
+				hasDownload := bytes.Contains(w.Body.Bytes(), []byte(`downloadWholeCollection(this)`))
+				if hasDownload != (path == "/test-detail") {
+					t.Fatalf("%s: download button present=%t", path, hasDownload)
+				}
+				if path == "/test-detail" && (!bytes.Contains(w.Body.Bytes(), []byte(`data-container-kind="`+kind+`"`)) || !bytes.Contains(w.Body.Bytes(), []byte(`data-container-id="remote1"`))) {
+					t.Fatal("detail download button lost container identity")
 				}
 			}
 		})

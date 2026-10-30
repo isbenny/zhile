@@ -10,12 +10,40 @@
       <button type="button" class="mood-tile mood-move" onclick="discoverMood('运动')"><i class="fa-solid fa-person-running" aria-hidden="true"></i><strong>运动一下</strong><span>动感节拍 · 找回活力</span></button>
     </div>
   </section>
-  <section class="home-section" aria-labelledby="discover-title"><div class="home-section-heading"><h2 id="discover-title">发现歌单</h2><button type="button" onclick="goToRecommend()">查看更多 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div><p class="section-caption">来自音乐平台的公开推荐</p>
+  {{if .PublicLocalOnly}}<section class="local-first-home"><span class="local-first-icon"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></span><div><h2>你的音乐，随身收藏</h2><p>加入本地自有或已获授权的音乐，建立自己的歌单。</p><button type="button" onclick="openLocalMusicPage()">添加本地音乐 <i class="fa-solid fa-plus" aria-hidden="true"></i></button></div></section>{{else}}<section class="home-section" aria-labelledby="discover-title"><div class="home-section-heading"><h2 id="discover-title">发现歌单</h2><button type="button" onclick="goToRecommend()">查看更多 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div><p class="section-caption">来自音乐平台的公开推荐</p>
     <div class="discovery-rail" id="home-playlists" aria-busy="true"><div class="home-feed-state" role="status"><i class="fa-solid fa-record-vinyl" aria-hidden="true"></i><p>正在寻找好听的歌单…</p></div></div>
   </section>
-  <section class="home-section home-recent" id="home-recent" aria-labelledby="recent-title"></section>
+  {{end}}<section class="home-section home-recent" id="home-recent" aria-labelledby="recent-title"></section>
   <div class="home-community"><button type="button" onclick="shareZhile()"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> 分享知乐</button><a href="https://github.com/isbenny/zhile/issues/new/choose" target="_blank" rel="noopener">反馈建议 <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a><a href="https://github.com/isbenny/zhile/releases" target="_blank" rel="noopener">更新日志</a></div>
 </main>
 {{end}}
-{{if .IsSearchLanding}}<section class="search-start" aria-labelledby="search-start-title"><h2 id="search-start-title">从喜欢的声音开始</h2><p>搜索歌名、歌手，或粘贴歌曲与歌单链接。</p><div><button type="button" onclick="discoverMood('华语经典','song')">华语经典</button><button type="button" onclick="discoverMood('轻音乐','song')">轻音乐</button><button type="button" onclick="discoverMood('爵士','song')">爵士</button><button type="button" onclick="discoverMood('民谣','song')">民谣</button></div></section>{{end}}
+{{if .IsSearchLanding}}
+<section class="search-browse" aria-labelledby="search-browse-title">
+  <nav class="browse-shortcuts {{if .PublicLocalOnly}}public-online-action{{end}}" aria-label="探索音乐">
+    <button type="button" onclick="goToPlaylistCategories()"><i class="fa-solid fa-layer-group browse-shortcut-icon" aria-hidden="true"></i><span>更多歌单分类</span><i class="fa-solid fa-arrow-right browse-shortcut-arrow" aria-hidden="true"></i></button>
+    <button type="button" onclick="goToTopLists()"><i class="fa-solid fa-ranking-star browse-shortcut-icon" aria-hidden="true"></i><span>看看排行榜</span><i class="fa-solid fa-arrow-right browse-shortcut-arrow" aria-hidden="true"></i></button>
+  </nav>
+  <div class="search-moments" aria-label="按场景找歌单">
+    <button type="button" onclick="discoverMood('通勤')"><i class="fa-solid fa-train-subway" aria-hidden="true"></i> 通勤路上</button>
+    <button type="button" onclick="discoverMood('专注 轻音乐')"><i class="fa-solid fa-leaf" aria-hidden="true"></i> 专注工作</button>
+    <button type="button" onclick="discoverMood('运动')"><i class="fa-solid fa-person-running" aria-hidden="true"></i> 运动一下</button>
+    <button type="button" onclick="discoverMood('睡前')"><i class="fa-regular fa-moon" aria-hidden="true"></i> 睡前放松</button>
+  </div>
+  <div class="browse-heading"><h2 id="search-browse-title">浏览全部</h2><p>{{if .PublicLocalOnly}}按关键词查找本地音乐与自建歌单{{else}}选一种风格，发现相关歌单{{end}}</p></div>
+  <div class="browse-grid">
+    <button type="button" class="browse-card browse-pop" style="--browse-color:#a82855" onclick="discoverMood('华语流行')"><strong>华语流行</strong><small>MANDARIN</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-microphone-lines"></i></span></button>
+    <button type="button" class="browse-card browse-global" style="--browse-color:#195ab3" onclick="discoverMood('欧美精选')"><strong>欧美精选</strong><small>GLOBAL POP</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-earth-americas"></i></span></button>
+    <button type="button" class="browse-card browse-calm" style="--browse-color:#08785f" onclick="discoverMood('轻音乐')"><strong>轻音乐</strong><small>EASY LISTENING</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-leaf"></i></span></button>
+    <button type="button" class="browse-card browse-electronic" style="--browse-color:#673db5" onclick="discoverMood('电子')"><strong>电子</strong><small>ELECTRONIC</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-bolt"></i></span></button>
+    <button type="button" class="browse-card browse-soul" style="--browse-color:#a03e1d" onclick="discoverMood('R&B')"><strong>R&B</strong><small>RHYTHM & SOUL</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-record-vinyl"></i></span></button>
+    <button type="button" class="browse-card browse-classic" style="--browse-color:#9a6c14" onclick="discoverMood('华语经典')"><strong>华语经典</strong><small>CLASSICS</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-compact-disc"></i></span></button>
+    <button type="button" class="browse-card browse-folk" style="--browse-color:#526a35" onclick="discoverMood('独立民谣')"><strong>独立民谣</strong><small>INDIE FOLK</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-guitar"></i></span></button>
+    <button type="button" class="browse-card browse-jazz" style="--browse-color:#265673" onclick="discoverMood('爵士')"><strong>爵士</strong><small>JAZZ</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-music"></i></span></button>
+    <button type="button" class="browse-card browse-rock" style="--browse-color:#a32935" onclick="discoverMood('摇滚')"><strong>摇滚</strong><small>ROCK</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-hand-fist"></i></span></button>
+    <button type="button" class="browse-card browse-hiphop" style="--browse-color:#70487e" onclick="discoverMood('嘻哈')"><strong>嘻哈</strong><small>HIP-HOP</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-headphones"></i></span></button>
+    <button type="button" class="browse-card browse-film" style="--browse-color:#80513b" onclick="discoverMood('电影原声')"><strong>电影原声</strong><small>SOUNDTRACKS</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-film"></i></span></button>
+    <button type="button" class="browse-card browse-classical" style="--browse-color:#424c96" onclick="discoverMood('古典')"><strong>古典</strong><small>CLASSICAL</small><span class="browse-art" aria-hidden="true"><i class="fa-solid fa-star"></i></span></button>
+  </div>
+</section>
+{{end}}
 {{end}}

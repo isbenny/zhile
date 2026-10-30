@@ -1,14 +1,23 @@
 {{define "playlist_grid"}}
 {{ if .IsLocalColPage }}
-    <div class="list-header" style="margin-bottom: 20px;">
-        <div>
-            <span class="result-count" style="font-size: 16px;"><i class="fa-solid fa-folder-open"></i> 本地歌单（共 {{ len .Playlists }} 个）</span>
-        </div>
-        <button type="button" class="btn-pill btn-pill-primary" onclick="showEditCollectionModal()">
-            <i class="fa-solid fa-plus"></i> 新建歌单
-        </button>
+<section class="music-library" aria-label="我的歌单">
+  <div class="library-list-heading"><h2>你的歌单 <span>{{.TotalCount}}</span></h2><button type="button" class="library-create" onclick="showEditCollectionModal()"><i class="fa-solid fa-plus" aria-hidden="true"></i> 新建歌单</button></div>
+  <div class="library-rows">
+    <div class="library-row library-liked"><button type="button" class="library-row-link" onclick="openLikedSongs(this)"><span class="library-art liked-art" aria-hidden="true"><i class="fa-solid fa-heart"></i></span><span class="library-row-info"><strong>Liked Songs</strong><small><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> 我喜欢的音乐 · {{.LikedCount}} 首</small></span><i class="fa-solid fa-chevron-right library-row-arrow" aria-hidden="true"></i></button></div>
+    {{range .Playlists}}
+    {{$detailURL := playlistDetailURL $.Root $.SearchType .}}
+    {{$kind := playlistExtraValue . "collection_kind"}}
+    {{$contentType := playlistExtraValue . "content_type"}}
+    <div class="library-row">
+      <a class="library-row-link" href="{{$detailURL}}"><span class="library-art" aria-hidden="true"><i class="fa-solid fa-music"></i>{{if .Cover}}<img src="{{.Cover}}" alt="" loading="lazy" onerror="this.remove()">{{end}}</span><span class="library-row-info"><strong>{{.Name}}</strong><small>{{if eq $kind "imported"}}{{if eq $contentType "album"}}专辑{{else}}歌单{{end}}{{else}}自建歌单{{end}} · {{.TrackCount}} 首{{if .Creator}} · {{.Creator}}{{end}}</small></span></a>
+      <button type="button" class="library-row-more" aria-label="{{.Name}}的更多操作" aria-haspopup="dialog" data-id="{{.ID}}" data-name="{{.Name}}" data-description="{{.Description}}" data-cover="{{.Cover}}" data-editable="{{playlistExtraValue . "editable"}}" data-container-kind="collection" data-container-id="{{.ID}}" onclick="openLibraryActions(this)"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
     </div>
-{{ end }}
+    {{end}}
+  </div>
+  {{if not .Playlists}}<p class="library-empty-note">从喜欢的一首歌开始，慢慢收集自己的音乐。</p>{{end}}
+  {{if gt .TotalPages 1}}<div class="pagination-bar" data-current-page="{{.Page}}" data-total-pages="{{.TotalPages}}"><button class="ctrl-btn" onclick="goToPage({{.Page}}-1,{{.PageSize}})" {{if le .Page 1}}disabled{{end}}>上一页</button><span class="pagination-text">第 {{.Page}} / {{.TotalPages}} 页</span><button class="ctrl-btn" onclick="goToPage({{.Page}}+1,{{.PageSize}})" {{if ge .Page .TotalPages}}disabled{{end}}>下一页</button></div>{{end}}
+</section>
+{{else}}
 
 {{ if .Playlists }}
     <div class="list-header" style="margin-bottom: 15px;">
@@ -79,7 +88,7 @@
                     {{ else if or (eq $.SearchType "playlist") (eq $.SearchType "album") }}
                     <button type="button"
                             class="ctrl-btn primary"
-                            title="{{ if eq $.SearchType "album" }}导入到本地歌单列表，保存为外部导入专辑；仅保留元数据，不保存具体歌曲明细。{{ else }}导入到本地歌单列表，保存为外部导入歌单；仅保留元数据，不保存具体歌曲明细。{{ end }}"
+                            title="{{ if eq $.SearchType "album" }}加入我的音乐，保留来源专辑链接。{{ else }}加入我的音乐，保留来源歌单链接。{{ end }}"
                             data-name="{{.Name}}"
                             data-description="{{.Description}}"
                             data-cover="{{.Cover}}"
@@ -90,19 +99,10 @@
                             data-link="{{.Link}}"
                             data-content-type="{{$.SearchType}}"
                             onclick="event.stopPropagation(); importCollectionFromButton(this)">
-                        <i class="fa-solid fa-download"></i> 导入本地
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i> 加入歌单
                     </button>
                     {{ end }}
                 </div>
-                {{ if .ID }}
-                <button type="button" class="btn-pill container-download-button"
-                        data-container-kind="{{ if eq .Source "local" }}collection{{ else if eq $.SearchType "album" }}album{{ else }}playlist{{ end }}"
-                        data-container-id="{{.ID}}" data-container-source="{{.Source}}" data-container-link="{{.Link}}"
-                        title="获取完整曲目并加入下载队列，包含所有分页"
-                        onclick="event.stopPropagation(); downloadWholeCollection(this)">
-                    <i class="fa-solid fa-cloud-arrow-down"></i> {{ if or (eq $.SearchType "album") (eq $contentType "album") }}下载整张专辑{{ else }}下载整个歌单{{ end }}
-                </button>
-                {{ end }}
             </div>
         </div>
         {{ end }}
@@ -113,16 +113,17 @@
          data-total-pages="{{ .TotalPages }}"
          data-page-size="{{ .PageSize }}"
          data-shortcut-hint="PgUp / PgDn"
-         title="Shortcut: PgUp / PgDn">
+         aria-label="列表翻页">
         <button type="button" class="ctrl-btn primary" onclick="goToPage({{ .Page }} - 1, {{ .PageSize }})" {{ if le .Page 1 }}disabled{{ end }}>
             <i class="fa-solid fa-chevron-left"></i> 上一页
         </button>
         <span class="pagination-text">第 {{ .Page }} / {{ .TotalPages }} 页</span>
-        <span class="pagination-shortcut-hint">PgUp / PgDn</span>
+
         <button type="button" class="ctrl-btn primary" onclick="goToPage({{ .Page }} + 1, {{ .PageSize }})" {{ if ge .Page .TotalPages }}disabled{{ end }}>
             下一页<i class="fa-solid fa-chevron-right"></i>
         </button>
     </div>
     {{ end }}
+{{end}}
 {{end}}
 {{end}}

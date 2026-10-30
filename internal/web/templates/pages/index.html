@@ -6,15 +6,18 @@
     <meta name="referrer" content="no-referrer">
     <title>知乐 · 音乐随身</title>
     <link rel="icon" href="{{.Root}}/icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="{{.Root}}/icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="知乐">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <link rel="stylesheet" href="{{.Root}}/style.css">
     <link rel="stylesheet" href="{{.Root}}/videogen.css">
     
     <link rel="stylesheet" href="{{.Root}}/vendor/aplayer/APlayer.min.css">
     <link rel="stylesheet" href="{{.Root}}/vendor/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="{{.Root}}/vendor/sakana/sakana.min.css"/>
 </head>
-<body class="floating-lyrics-disabled">
+<body class="floating-lyrics-disabled {{if .PublicLocalOnly}}public-local-only{{end}}">
 
 <!-- 右侧工具栏：设置、历史和本地音乐在所有页面均可使用 -->
 <div class="right-toolbar" id="utility-toolbar" aria-label="常用工具">
@@ -62,7 +65,7 @@
     {{template "song_list" .}}
 </div>
 
-<footer class="brand-notice">知乐 Zhile · <a href="https://github.com/isbenny/zhile/releases" target="_blank" rel="noopener">开源代码</a> · <a href="https://github.com/isbenny/zhile/blob/main/LICENSE" target="_blank" rel="noopener">开源许可</a> · <button type="button" onclick="openAboutAppModal()">关于知乐</button></footer>
+<footer class="brand-notice">知乐 Zhile · <a href="https://github.com/isbenny/zhile/releases" target="_blank" rel="noopener">开源代码</a> · <a href="https://github.com/isbenny/zhile/blob/main/LICENSE" target="_blank" rel="noopener">开源许可</a> · <button type="button" onclick="openAboutAppModal()">关于知乐</button> · <a href="https://music.cnxwkj.com/about.html" target="_blank" rel="noopener">作者 Benny</a><p class="rights-inline">演示内容仅供学习与技术交流 · 请仅使用自有或已获授权的音乐 · <a href="https://music.cnxwkj.com/legal.html#copyright" target="_blank" rel="noopener">侵权投诉／侵删</a></p></footer>
 
 {{template "modals" .}}
 
@@ -73,24 +76,16 @@
 
 <script>
     window.API_ROOT = "{{.Root}}";
+    window.ZHILE_LOCAL_ONLY = {{if .PublicLocalOnly}}true{{else}}false{{end}};
+    window.ZHILE_MEDIA_LOCAL_ONLY = {{if .MediaLocalOnly}}true{{else}}false{{end}};
     window.sakanaInstance = null;
-
-    function initSakanaWidget() {
-        if (window.innerWidth > 768) {
-            window.sakanaInstance = new SakanaWidget().mount('#sakana-widget');
-        }
-    }
 </script>
 
 <script src="{{.Root}}/app.js"></script>
 {{template "videogen_modal" .}}
 <script src="{{.Root}}/videogen.js"></script>
 
-<div id="sakana-container" class="sakana-container">
-    <div id="sakana-widget"></div>
-</div>
 
-<script async onload="initSakanaWidget()" src="{{.Root}}/vendor/sakana/sakana.min.js"></script>
 
 </body>
 </html>

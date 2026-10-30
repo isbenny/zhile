@@ -43,6 +43,7 @@ var (
 type Collection struct {
 	ID          uint        `gorm:"primaryKey" json:"id"`
 	Name        string      `gorm:"not null" json:"name"`
+	SystemKey   *string     `gorm:"uniqueIndex" json:"system_key,omitempty"`
 	Description string      `json:"description"`
 	Cover       string      `json:"cover"`
 	Kind        string      `gorm:"not null;default:manual" json:"kind"`
@@ -114,15 +115,19 @@ func (c Collection) isManual() bool {
 	return !c.isImported()
 }
 
+func (c Collection) isLiked() bool {
+	return c.SystemKey != nil && *c.SystemKey == "liked"
+}
+
 func (c Collection) editable() bool {
-	return c.isManual()
+	return c.isManual() && !c.isLiked()
 }
 
 func (c Collection) displayCover() string {
 	if strings.TrimSpace(c.Cover) != "" {
 		return c.Cover
 	}
-	return fmt.Sprintf("https://picsum.photos/seed/col_%d/400/400", c.ID)
+	return RoutePrefix + "/icon.png"
 }
 
 func (c Collection) displayCreator() string {
@@ -618,6 +623,13 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 
 		playlists := make([]model.Playlist, 0, len(collections))
 		for _, collection := range collections {
+			if c.GetBool("PublicLocalOnly") && collection.isImported() {
+				continue
+			}
+			if collection.isLiked() {
+				c.Set("LikedCount", countSavedSongs(collection.ID))
+				continue
+			}
 			playlists = append(playlists, collection.playlistCard())
 		}
 
@@ -644,10 +656,36 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 		}
 
 		c.Set("CollectionContentType", collection.normalizedContentType())
+		cover := collection.displayCover()
+		if c.GetBool("PublicLocalOnly") && !strings.HasPrefix(cover, RoutePrefix+"/") {
+			cover = RoutePrefix + "/icon.png"
+		}
+		c.Set("CollectionCover", cover)
+		c.Set("IsLikedCollection", collection.isLiked())
 		renderIndex(c, songs, nil, "", nil, errMsg, "song", collection.originalLink(), id, collection.Name, false, collection.normalizedKind(), nil)
 	})
 
 	colAPI := api.Group("/collections")
+
+	// Created only on explicit interaction; a unique nullable key leaves existing
+	// user-created collections untouched and prevents concurrent duplicates.
+	colAPI.POST("/liked", func(c *gin.Context) {
+		if !allowSameOriginWrite(c) {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+		key := "liked"
+		collection := Collection{Name: "我喜欢的音乐", SystemKey: &key, Kind: collectionKindManual, ContentType: collectionContentPlaylist, Source: "local"}
+		if err := db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "system_key"}}, DoNothing: true}).Create(&collection).Error; err != nil {
+			c.JSON(500, gin.H{"error": "暂时无法打开我喜欢的音乐"})
+			return
+		}
+		if err := db.Where("system_key = ?", key).First(&collection).Error; err != nil {
+			c.JSON(500, gin.H{"error": "暂时无法读取我喜欢的音乐"})
+			return
+		}
+		c.JSON(200, gin.H{"id": collection.ID, "name": collection.Name})
+	})
 
 	colAPI.GET("", func(c *gin.Context) {
 		var collections []Collection
@@ -674,6 +712,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 		req.Name = strings.TrimSpace(req.Name)
 		req.Description = strings.TrimSpace(req.Description)
 		req.Cover = strings.TrimSpace(req.Cover)
+		req.SystemKey = nil
 		req.Kind = collectionKindManual
 		req.ContentType = collectionContentPlaylist
 		req.Source = "local"
@@ -738,6 +777,10 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return
 		}
+		if existing.isLiked() {
+			c.JSON(400, gin.H{"error": "我喜欢的音乐为固定歌单，可以添加或移除其中的歌曲"})
+			return
+		}
 		if existing.isImported() {
 			c.JSON(400, gin.H{"error": "外部导入歌单/专辑不支持编辑，请删除后重新导入"})
 			return
@@ -768,6 +811,15 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 		id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 		if err != nil || id == 0 {
 			c.JSON(400, gin.H{"error": "无效的歌单 ID"})
+			return
+		}
+		var existing Collection
+		if err := db.First(&existing, uint(id)).Error; err != nil {
+			c.JSON(404, gin.H{"error": "歌单不存在"})
+			return
+		}
+		if existing.isLiked() {
+			c.JSON(400, gin.H{"error": "我喜欢的音乐为固定歌单，可以移除其中的歌曲"})
 			return
 		}
 		err = db.Transaction(func(tx *gorm.DB) error {

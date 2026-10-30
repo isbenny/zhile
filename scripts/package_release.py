@@ -4,6 +4,7 @@ Run with Python 3 and Go 1.27 from a clean checkout after placing APKs in --outp
 """
 import argparse, hashlib, json, os, shutil, subprocess, tempfile, urllib.request, zipfile, re
 from pathlib import Path
+from update_manifest import create_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = re.search(r'AppVersion = "([^"]+)"', (ROOT / 'core/version.go').read_text()).group(1)
@@ -81,12 +82,16 @@ def site_bundle(output):
     (site / 'downloads').mkdir()
     for name in assets + ['SHA256SUMS.txt']:
         shutil.copyfile(output / name, site / 'downloads' / name)
-    index = site / 'index.html'
-    index.write_text(index.read_text().replace(f'https://github.com/isbenny/zhile/releases/download/v{VERSION}/', 'downloads/'))
+    for page in site.glob('*.html'):
+        page.write_text(page.read_text().replace(f'https://github.com/isbenny/zhile/releases/download/v{VERSION}/', 'downloads/'))
+    (site / 'update.json').write_text(json.dumps(create_manifest(output, VERSION), ensure_ascii=False, indent=2) + '\n')
     instructions = f'''知乐 Zhile v{VERSION} — 服务器上传说明
 
 把 website 文件夹里的所有内容整体上传到网站目录，保留 assets 和 downloads 的相对位置。
 例如：网站根目录/index.html、assets/、downloads/、LICENSE.txt、NOTICE.txt。
+域名使用 https://music.cnxwkj.com 。先上传安装包及对应源码，确认可访问后，最后上传 update.json。
+固定文件名的安装包和 update.json 请禁用长时间缓存。网站上线前先完成内容边界、主体及备案核验。
+部署与统计详见仓库 docs/DEPLOYMENT.md。
 手机打开你的网站地址，点“下载 Android 版”，按系统提示安装即可。
 本网页完全静态，不需要配置 Go、数据库或登录。
 请保留源码下载、许可证和版权说明。不要把签名密钥上传到网站或 GitHub。

@@ -1,0 +1,15 @@
+# Adapt the file path and nginx PID path to the actual panel installation.
+/var/log/nginx/zhile-downloads.jsonl {
+    daily
+    rotate 30
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 root adm
+    sharedscripts
+    postrotate
+        # Replace with your panel's supported nginx/OpenResty log-reopen command.
+        # Without reopening, nginx may keep writing to the renamed file.
+    endscript
+}

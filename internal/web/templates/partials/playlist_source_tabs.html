@@ -56,7 +56,7 @@
                             <div class="playlist-count">{{ if gt .TrackCount 0 }}共 {{ .TrackCount }} 首{{ else }}进入查看{{ end }}</div>
                             <button type="button"
                                     class="ctrl-btn primary"
-                                    title="导入到本地歌单列表，保存为外部导入歌单；仅保留元数据，不保存具体歌曲明细。"
+                                    title="加入我的音乐，保留来源歌单链接。"
                                     data-name="{{.Name}}"
                                     data-description="{{.Description}}"
                                     data-cover="{{.Cover}}"
@@ -67,7 +67,7 @@
                                     data-link="{{.Link}}"
                                     data-content-type="playlist"
                                     onclick="event.stopPropagation(); importCollectionFromButton(this)">
-                                <i class="fa-solid fa-download"></i> 导入本地
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i> 加入歌单
                             </button>
                         </div>
                     </div>

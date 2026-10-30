@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#121212"><title>iPhone / iPad 使用方案 · 知乐</title><meta name="description" content="用 Safari 连接个人知乐 Web 实例，再添加到主屏幕。查看 iOS 使用步骤、下载方式与限制。"><link rel="canonical" href="https://music.cnxwkj.com/ios.html"><link rel="icon" href="assets/icon.png"><link rel="stylesheet" href="assets/style.css?v=0.2.1"></head>
+<body>
+<header class="shell masthead"><a class="brand" href="./"><img src="assets/icon.png" width="42" height="42" alt=""><span>知乐<span class="cn">ZHILE</span></span></a><nav aria-label="主导航"><a href="./#download">Android 下载</a><a href="about.html">作者 Benny ↗</a></nav></header>
+<main class="shell legal-copy ios-guide">
+<p class="eyebrow">IPHONE / IPAD · WEB EXPERIENCE</p>
+<h1>在 iPhone 上，<br>也能打开知乐。</h1>
+<p class="lead">Safari 连接你的个人音乐服务，<br>把知乐放到主屏幕。</p>
+<p class="legal-status">当前提供 Web 使用方案，没有原生 iOS 安装包或 TestFlight 邀请。APK 仅适用于 Android。本网站是下载与说明页，不是可直接听歌的公共 Web 服务。</p>
+<section><h2>方案一 · 同一 Wi-Fi 下使用</h2><ol class="ios-steps"><li><strong>在电脑上启动知乐 Web 服务。</strong>需要一台保持开机的电脑。按下方说明从源码运行，并在电脑浏览器完成首次管理员设置。</li><li><strong>iPhone 与电脑连接同一网络。</strong>在 Safari 输入电脑的局域网地址，例如 <code>http://192.168.1.23:8080/music/</code>。把示例 IP 换成电脑实际地址；手机上的 localhost 指的是手机自身。</li><li><strong>登录后开始使用。</strong>搜索、歌单和播放操作通过个人 Web 服务完成。电脑关机、休眠或断开网络后，手机将无法继续访问。</li></ol>
+<details><summary>电脑如何启动？（适合自行部署的用户）</summary><p>安装 Git 和项目要求的 Go 1.27 工具链，取得 v0.2.1 源码后执行：</p><pre><code>git clone --branch v0.2.1 https://github.com/isbenny/zhile.git
+cd zhile
+go run ./cmd/music-dl web --port 8080 --no-browser</code></pre><p>在电脑打开 <code>http://localhost:8080/music/setup</code>，使用启动终端中的一次性设置令牌完成管理员设置。令牌和密码只在自己的设备中使用。不要使用 <code>--desktop</code>，该参数只允许本机访问。</p><p>在防火墙中仅允许可信局域网访问端口；不需要关闭防火墙或直接把端口暴露到公网。设备连不上时，检查是否使用访客 Wi-Fi 或开启了设备隔离。高级音频标签或转码功能可能另需 FFmpeg，见<a href="https://github.com/isbenny/zhile/blob/main/docs/BUILD.md">构建说明</a>。</p></details></section>
+<section><h2>方案二 · 个人服务器访问</h2><p>在自己的服务器运行知乐，配置 HTTPS、管理员登录，并限定访问者。这样外出时也可使用。现有 Web 登录是管理入口，不是多用户隔离系统：共享同一实例的人可能看到同一音乐库、下载记录和设置。</p><p>适合自己使用或可信的小范围使用；不要把个人实例当作开放注册的公共音乐站。只上传下载页文件不会自动得到在线播放器。<a href="https://github.com/isbenny/zhile/blob/main/docs/DEPLOYMENT.md">查看部署与数据说明 ↗</a></p></section>
+<section><h2>把播放器添加到主屏幕</h2><ol class="ios-steps"><li>用 Safari 打开<strong>你实际运行的知乐播放器地址</strong>，不是当前说明页。</li><li>打开分享菜单，选择“添加到主屏幕”。如果系统提供“作为 Web App 打开”，可按需开启。</li><li>确认名称为“知乐”后添加。以后从主屏幕图标进入，服务仍需保持在线。</li></ol><p><a href="https://support.apple.com/zh-cn/guide/iphone/iphea86e5236/ios" target="_blank" rel="noopener">Apple 官方操作说明 ↗</a></p></section>
+<section><h2>使用前，了解这几件事</h2><ul><li><strong>播放需要手动开始。</strong>锁屏、后台持续播放、系统来电后的恢复效果取决于 iOS、音频来源和网络，尚未完成 iPhone 真机验证。</li><li><strong>整单下载保存在服务端。</strong>电脑运行服务就保存到电脑，服务器运行就保存到服务器。它不会自动进入 iPhone 的“音乐”资料库。</li><li><strong>单曲可尝试浏览器下载。</strong>在歌曲更多操作中选择浏览器下载；根据 Safari 的文件下载／分享界面保存到“文件”。实际选项随系统和响应类型变化。</li><li><strong>不会离线运行整个音乐服务。</strong>添加主屏幕不等于安装了 Android 版，也不会在 iPhone 上启动 Go 后端。</li><li><strong>内容权限不变。</strong>只访问和保存你有权使用的内容；第三方音源的可用性不作保证。</li></ul></section>
+<section><h2>以后会有原生 iOS 版吗？</h2><p>可以继续适配 iOS，再通过 TestFlight 测试或提交 App Store。需要 Apple 开发者账号、签名和审核，并核实内容与平台接口的使用范围；不是把 APK 改成另一个文件后缀。</p><p>TestFlight 构建最长可测试 90 天，不适合作为永久下载链接。当前未提供原生版本或上线时间承诺。<a href="https://developer.apple.com/testflight/" target="_blank" rel="noopener">了解 TestFlight ↗</a></p></section>
+<a class="ios-action" href="./">返回下载首页 <span aria-hidden="true">↗</span></a>
+</main><footer class="shell footer"><div><strong>知乐</strong><span>听见喜欢，乐在其中。</span></div><p><a href="legal.html#privacy">隐私说明</a> · <a href="legal.html#copyright">侵权投诉／侵删</a><br>演示内容仅供学习与技术交流 · <a href="about.html">Benny · AI Developer</a></p></footer>
+</body></html>
