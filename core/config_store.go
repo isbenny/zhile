@@ -27,7 +27,7 @@ const (
 	DefaultShortcutPlayPause        = "Space"
 	DefaultLyricFontFamily          = "system"
 	DefaultLyricFontSize            = 24
-	DefaultUpdateRepoURL            = "https://github.com/isbenny/melofern"
+	DefaultUpdateRepoURL            = "https://github.com/isbenny/zhile"
 	DefaultGithubProxyURL           = "https://edgeone.gh-proxy.com"
 	webSettingsKey                  = "web_settings"
 	webAuthSettingsKey              = "web_auth_settings"

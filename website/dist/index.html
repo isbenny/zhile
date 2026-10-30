@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#121212">
+<meta name="description" content="知乐 ZHILE：黑绿配色的开源音乐工具，聚合搜索、在线试听、收藏与下载。下载 Android 版，查看对应源码。">
+<title>知乐 · 听见喜欢，乐在其中</title>
+<link rel="icon" href="assets/icon.png"><link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip" href="#download">跳到下载</a>
+<header class="shell masthead">
+<a class="brand" href="./" aria-label="知乐 首页"><img src="assets/icon.png" width="42" height="42" alt=""><span>知乐<span class="cn">ZHILE</span></span></a>
+<nav aria-label="主导航"><a href="#install">安装说明</a><a href="https://github.com/isbenny/zhile" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a></nav>
+</header>
+<main class="shell">
+<section class="hero" aria-labelledby="hero-title">
+<div class="intro">
+<p class="eyebrow"><span></span> OPEN SOURCE / ANDROID</p>
+<h1 id="hero-title">懂你的旋律，<br><em>就在知乐。</em></h1>
+<p class="lead">搜索、聆听、收藏。<br>把喜欢的声音，留在自己的音乐角落。</p>
+<div id="download" class="actions">
+<a class="download" href="https://github.com/isbenny/zhile/releases/download/v0.1.0/zhile-arm64.apk" data-file="zhile-arm64.apk"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>下载 Android 版</a>
+<a class="source" href="https://github.com/isbenny/zhile/releases/download/v0.1.0/zhile-source.zip" data-file="zhile-source.zip">获取源码 <span aria-hidden="true">↗</span></a>
+</div>
+<p class="release">v0.1.0 · Android 7.0+ · ARM64 <span>适合大多数安卓手机</span></p>
+<details class="versions"><summary>其他安装包与文件校验</summary><div><a href="https://github.com/isbenny/zhile/releases/download/v0.1.0/zhile-universal.apk" data-file="zhile-universal.apk">通用版 APK</a><a href="https://github.com/isbenny/zhile/releases/download/v0.1.0/zhile-x86_64.apk" data-file="zhile-x86_64.apk">x86_64 版</a><a href="https://github.com/isbenny/zhile/releases/download/v0.1.0/SHA256SUMS.txt" data-file="SHA256SUMS.txt">SHA256 校验</a></div></details>
+</div>
+<figure class="product">
+<div class="phone"><img class="screen" src="assets/app-preview.png" width="432" height="936" alt="知乐 手机布局实拍：深色搜索页面、音乐来源选择及歌曲列表"></div>
+<figcaption><span class="dot"></span> 简洁黑绿界面 <span class="caption-sep">/</span> Web 界面实拍</figcaption>
+</figure>
+</section>
+<section class="features" aria-label="使用 知乐">
+<article><span class="num">01 / DISCOVER</span><h2>找到想听的歌</h2><p>按歌名、歌手或专辑搜索，<br>在多个音乐来源间自由选择。</p></article>
+<article><span class="num">02 / LISTEN</span><h2>先听一听</h2><p>在线试听，切换音源。<br>从搜索结果开始，发现喜欢的旋律。</p></article>
+<article><span class="num">03 / KEEP</span><h2>收进自己的歌单</h2><p>收藏喜欢的歌曲，或下载<br>你有权保存的音乐，随时回味。</p></article>
+</section>
+<section class="installation" id="install" aria-labelledby="install-title">
+<div><p class="eyebrow">GET STARTED</p><h2 id="install-title">几步，开始聆听。</h2><p class="muted">首个品牌预览版 · 持续打磨中</p></div>
+<div class="questions">
+<details open><summary>安卓手机怎么安装？</summary><p>用手机浏览器打开此页，下载 Android 版 APK。打开文件，按系统提示允许当前浏览器安装此应用。安装完成后打开 知乐 即可，无需连接你的电脑。</p></details>
+<details><summary>安装失败，或打开后页面空白？</summary><p>需要 Android 7.0 或更新版本，并保持系统 Android WebView 更新。若提示架构不兼容，请尝试上面的通用版。此版本已完成构建与网页检查，尚未完成安卓真机验证。</p></details>
+<details><summary>为什么有些歌曲不能播放或下载？</summary><p>可用性取决于音乐来源、网络与平台权限，部分来源需要你自己的登录信息。可以尝试换源；本应用不保证每首歌均可下载。</p></details>
+<details><summary>项目开源吗？</summary><p>知乐 基于 <a href="https://github.com/guohuiyuan/go-music-dl" target="_blank" rel="noopener">go-music-dl</a> 二次开发，以 <a href="LICENSE.txt">AGPL-3.0</a> 发布。你可以查看、修改和再分发代码，并按协议提供对应源码。<a href="NOTICE.txt">查看修改与第三方声明</a>。</p></details>
+</div>
+</section>
+</main>
+<footer class="shell footer"><div><strong>知乐</strong><span>听见喜欢，乐在其中。</span></div><p>基于 <a href="https://github.com/guohuiyuan/go-music-dl">go-music-dl</a> · <a href="LICENSE.txt">AGPL-3.0</a> · <a href="https://github.com/isbenny/zhile/issues">反馈问题</a><br><span>由 isbenny 维护 · 仅用于你有权使用的音乐内容</span></p></footer>
+</body>
+</html>

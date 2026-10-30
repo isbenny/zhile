@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Melofern: build redistributable audio tools from matching source (2026-10-30).
+# 知乐: build redistributable audio tools from matching source (2026-10-30).
 set -euo pipefail
 abi="${1:?Android ABI required}"
 case "$abi" in

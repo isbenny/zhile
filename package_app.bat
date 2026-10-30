@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal EnableExtensions
 
 if "%ANDROID_HOME%"=="" set "ANDROID_HOME=C:\Android"
@@ -101,8 +102,8 @@ echo Building!
 "%GOGIO_BIN%" -target android ^
  -buildmode exe ^
  -o ../music-dl.apk ^
- -appid io.github.isbenny.melofern ^
- -name Melofern ^
+ -appid io.github.isbenny.zhile ^
+ -name "知乐" ^
  -version %VERSION% ^
  -minsdk 24 ^
  -icon ../brand/icon.png ^

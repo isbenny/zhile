@@ -1,12 +1,18 @@
-name: Build Melofern Android
+name: Build Zhile Android
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "website/**"
+      - "docs/**"
+      - "design/**"
+      - "README.md"
+      - "NOTICE"
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: melofern-android-${{ github.ref }}
+  group: zhile-android-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build-ffmpeg:
@@ -21,9 +27,17 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
+      - name: Cache audio tools
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: desktop_app/ffmpeg/android
+          key: ffmpeg-8.0.1-api24-${{ matrix.abi }}-${{ hashFiles('.github/scripts/build_ffmpeg_android.sh') }}
       - name: Install NDK
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
         run: sdkmanager 'ndk;27.0.12077973'
       - name: Build pinned FFmpeg source
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: bash .github/scripts/build_ffmpeg_android.sh '${{ matrix.abi }}'
@@ -168,20 +182,20 @@ jobs:
           $aapt = "$env:ANDROID_HOME\build-tools\34.0.0\aapt.exe"
           $info = & $aapt dump badging music-dl_arm64-v8a.apk
           $info | Select-String "package:|application-label:|sdkVersion:"
-          if (-not ($info -match "io.github.isbenny.melofern")) { throw "Wrong application ID" }
-          if (-not ($info -match "application-label:'Melofern'")) { throw "Wrong application label" }
-          Copy-Item music-dl.apk melofern-universal.apk
-          Copy-Item music-dl_arm64-v8a.apk melofern-arm64.apk
-          Copy-Item music-dl_x86_64.apk melofern-x86_64.apk
+          if (-not ($info -match "io.github.isbenny.zhile")) { throw "Wrong application ID" }
+          if (-not ($info -match "application-label:'知乐'")) { throw "Wrong application label" }
+          Copy-Item music-dl.apk zhile-universal.apk
+          Copy-Item music-dl_arm64-v8a.apk zhile-arm64.apk
+          Copy-Item music-dl_x86_64.apk zhile-x86_64.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: melofern-android
+          name: zhile-android
           retention-days: 30
           if-no-files-found: error
           path: |
-            melofern-universal.apk
-            melofern-arm64.apk
-            melofern-x86_64.apk
+            zhile-universal.apk
+            zhile-arm64.apk
+            zhile-x86_64.apk
 

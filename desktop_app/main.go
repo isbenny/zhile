@@ -338,7 +338,7 @@ func main() {
 
 	go func() {
 		window := new(app.Window)
-		window.Option(app.Title("Melofern"))
+		window.Option(app.Title("知乐"))
 		if err := newDesktopApp(window, initialNav).run(); err != nil {
 			log.Fatal(err)
 		}

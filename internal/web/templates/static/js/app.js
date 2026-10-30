@@ -25,7 +25,7 @@ const DOWNLOAD_DIR_PRESET_VALUES = [
   "/sdcard/Download",
 ];
 const DOWNLOAD_DIR_PRESETS = new Set(DOWNLOAD_DIR_PRESET_VALUES);
-const DEFAULT_UPDATE_REPO_URL = "https://github.com/isbenny/melofern";
+const DEFAULT_UPDATE_REPO_URL = "https://github.com/isbenny/zhile";
 const DEFAULT_GITHUB_PROXY_URL = "https://edgeone.gh-proxy.com";
 const DEFAULT_DOWNLOAD_TIP_DURATION = 8;
 const OPEN_CONFIG_QUERY = "open_config";
@@ -4941,7 +4941,7 @@ function openUpdateModal(updateInfo = null) {
     const title = document.getElementById("appUpdateTitle");
     const summary = document.getElementById("appUpdateSummary");
     if (title) {
-      title.textContent = `关于 Melofern v${updateInfo.current_version || "-"}`;
+      title.textContent = `关于 知乐 v${updateInfo.current_version || "-"}`;
     }
     if (summary) {
       summary.textContent = `当前版本 v${updateInfo.current_version || "-"}，GitHub 最新版本 v${updateInfo.latest_version || "-"}`;
@@ -4953,7 +4953,7 @@ function openUpdateModal(updateInfo = null) {
 
 async function openAboutAppModal() {
   const title = document.getElementById("appUpdateTitle");
-  if (title) title.textContent = "关于 Melofern";
+  if (title) title.textContent = "关于 知乐";
   const summary = document.getElementById("appUpdateSummary");
   if (summary) summary.textContent = "正在读取 GitHub 版本信息...";
   openUpdateModal();
@@ -6094,7 +6094,7 @@ function updateDocumentTitleForMedia(audio) {
   if (audio.artist) {
     parts.push(audio.artist);
   }
-  document.title = `${parts.join(" - ")} | music-dl`;
+  document.title = `${parts.join(" - ")} | 知乐`;
 }
 
 function shouldPreserveMediaSessionMetadata() {
@@ -6121,7 +6121,7 @@ function updateMediaSessionMetadata(audio = getCurrentAPlayerAudio()) {
   }
 
   const metadata = {
-    title: audio.name || "music-dl",
+    title: audio.name || "知乐",
     artist: audio.artist || "",
   };
 
@@ -9413,7 +9413,7 @@ function resetEmptyPlaybackQueue() {
   syncAllPlayButtons();
   KaraokeLyrics.hide();
   clearMediaSession();
-  document.title = defaultDocumentTitle || "music-dl";
+  document.title = defaultDocumentTitle || "知乐";
 }
 
 async function savePlaybackQueueNow() {

@@ -1,0 +1,30 @@
+知乐 / ZHILE
+Copyright notices and license of inherited work remain applicable.
+
+Derived from go-music-dl, Copyright its authors and contributors.
+Upstream: https://github.com/guohuiyuan/go-music-dl
+Base version: v1.1.3 (2c1cefe), via https://github.com/isbenny/go-music-dl
+知乐 modifications by isbenny, 2026-10-30:
+- dark green mobile interface, branding, original generated circular wave-Z icon;
+- Android application ID io.github.isbenny.zhile and release signing;
+- download website, source distribution, source-built FFmpeg packaging.
+
+The combined application is distributed under GNU AGPL version 3.
+See LICENSE for the complete terms. No warranty is provided.
+Corresponding source: https://github.com/isbenny/zhile/releases
+Source repository: https://github.com/isbenny/zhile
+Upstream copyright notices have not been replaced by exclusive ownership claims.
+Go import/module paths are intentionally retained for compatibility.
+
+Bundled web components retain their licenses in
+internal/web/templates/static/vendor/licenses/.
+Go dependency source archives (with their original notices) are included in
+zhile-source.zip / dependency-sources, along with build instructions.
+FFmpeg 8.0.1 is built without external codecs, network support or GPL options.
+Its LGPL-2.1-or-later source and license are supplied in zhile-source.zip.
+No Xabe precompiled FFmpeg binaries are distributed in 知乐 releases.
+The Go/Android/JDK toolchains are separately installed system build tools.
+
+The code license does not grant rights in third-party songs or platform marks.
+Only access/download content you are authorized to use.
+知乐 has no affiliation with Spotify or the supported music platforms.

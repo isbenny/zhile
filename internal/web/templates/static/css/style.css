@@ -2738,5 +2738,7 @@ body:not(.tv-ui) :is(.btn-switch, .btn-fav, .btn-dl:not(.btn-download), .rt-form
 body:not(.tv-ui) :is(.btn-switch, .btn-fav, .btn-dl):hover { background: #333; color: #1ed760; border-color: #535353; }
 body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-pic { background-color: #282828 !important; }
 
-/* Melofern branding, modified 2026-10-30. */
+/* 知乐 branding, modified 2026-10-30. */
 .brand-notice{padding:24px 20px 145px;text-align:center;color:#a7a7a7;font-size:12px;line-height:2}.brand-notice a{color:#b3b3b3;text-decoration:underline}.brand-notice a:hover{color:#1ed760}
+
+.brand-notice button{border:0;background:none;font:inherit;color:#b3b3b3;text-decoration:underline;cursor:pointer;padding:8px}.app-update-summary a{color:#1ed760;text-decoration:underline}

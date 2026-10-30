@@ -442,7 +442,7 @@ func TestSettingsModalIncludesDownloadDirPresets(t *testing.T) {
 		`id="setting-auto-switch-invalid-sources"`,
 		`id="setting-soda-client-dir"`,
 		`onclick="openAboutAppModal()"`,
-		`关于 Melofern`,
+		`关于 知乐`,
 		`class="cookie-item setting-item setting-link-row"`,
 		`setting-link-icon`,
 		`setting-link-title`,
