@@ -2750,6 +2750,10 @@ body:not(.tv-ui) .app-toast-close{color:#b3b3b3;background:#333}body:not(.tv-ui)
 body:not(.tv-ui) .app-toast-success{border-left:3px solid #1ed760}body:not(.tv-ui) .app-toast-warning{border-left:3px solid #e6b85c}body:not(.tv-ui) .app-toast-error{border-left:3px solid #ed7b85}
 
 /* Zhile mobile system: quiet surfaces, compact rows and labeled action sheets. */
+body:not(.tv-ui) #download-queue-summary progress{appearance:none;border:0;background:#414141;border-radius:4px;overflow:hidden;accent-color:#1ed760}
+body:not(.tv-ui) #download-queue-summary progress::-webkit-progress-bar{background:#414141;border-radius:4px}
+body:not(.tv-ui) #download-queue-summary progress::-webkit-progress-value{background:#1ed760;border-radius:4px}
+body:not(.tv-ui) #download-queue-summary progress::-moz-progress-bar{background:#1ed760;border-radius:4px}
 body:not(.tv-ui) :is(.local-music-hint,.local-music-page-hint,.player-speed-menu,.page-jump input){background:#242424;color:#b3b3b3;border-color:#404040;box-shadow:none}
 body:not(.tv-ui) :is(.local-music-hint.error,.local-music-page-hint.error){background:#321d22;color:#ffb4be;border-color:#62313b}
 body:not(.tv-ui) .local-music-missing{background:#372e1d;color:#e9c67c;border-color:#62502d}
