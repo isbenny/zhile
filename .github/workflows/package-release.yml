@@ -1,0 +1,58 @@
+name: Package verified Zhile release
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact commit used by the successful Android build
+        required: true
+      build_run_id:
+        description: Successful Build Zhile Android run ID
+        required: true
+      tag:
+        description: Existing draft release tag
+        required: true
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: zhile-release-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      BUILD_RUN: ${{ inputs.build_run_id }}
+      SOURCE_REVISION: ${{ inputs.revision }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.revision }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: Verify build provenance and draft target
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          def gh(*args):
+              return json.loads(subprocess.check_output(['gh', *args], text=True))
+          rev = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert rev == os.environ['SOURCE_REVISION']
+          run = gh('run', 'view', os.environ['BUILD_RUN'], '--json', 'headSha,conclusion,workflowName')
+          assert run['headSha'] == rev and run['conclusion'] == 'success'
+          assert run['workflowName'] == 'Build Zhile Android'
+          release = gh('release', 'view', os.environ['RELEASE_TAG'], '--json', 'isDraft,targetCommitish')
+          assert release['isDraft'] and release['targetCommitish'] == rev
+          version = re.search(r'AppVersion = "([^"]+)"', open('core/version.go').read()).group(1)
+          assert os.environ['RELEASE_TAG'] == 'v' + version
+          PY
+      - name: Retrieve verified APKs
+        run: gh run download "$BUILD_RUN" --name zhile-android --dir release
+      - name: Package corresponding source and website
+        run: python3 scripts/package_release.py --output release --stage all
+      - name: Attach files to draft
+        run: |
+          gh release upload "$RELEASE_TAG" release/zhile-arm64.apk release/zhile-universal.apk release/zhile-x86_64.apk release/zhile-source.zip release/zhile-website.zip release/SHA256SUMS.txt --clobber
+          gh release view "$RELEASE_TAG" --json isDraft,assets
