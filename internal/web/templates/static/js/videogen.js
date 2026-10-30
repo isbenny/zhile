@@ -1492,20 +1492,20 @@
 
         const renderWin = window.open(window.API_ROOT + '/render', '_blank');
         if (!renderWin) {
-            alert("渲染页面被浏览器拦截，请允许弹出窗口！"); return;
+            showNotice("渲染页面被浏览器拦截，请允许弹出窗口！"); return;
         }
       },
   
             // === 新增：上一首 / 下一首 ===
             playPrev: function() {
-                    if (this.isLocalAudio) return alert("本地预览模式下无法切换歌曲");
+                    if (this.isLocalAudio) return showNotice("本地预览模式下无法切换歌曲");
                     if (window.ap && window.ap.list && window.ap.list.audios && window.ap.list.audios.length > 0) {
                             window.ap.skipBack && window.ap.skipBack();
                             if (window.ap.audio && window.ap.audio.paused) window.ap.play();
                     }
             },
             playNext: function() {
-                    if (this.isLocalAudio) return alert("本地预览模式下无法切换歌曲");
+                    if (this.isLocalAudio) return showNotice("本地预览模式下无法切换歌曲");
                     if (window.ap && window.ap.list && window.ap.list.audios && window.ap.list.audios.length > 0) {
                             window.ap.skipForward && window.ap.skipForward();
                             if (window.ap.audio && window.ap.audio.paused) window.ap.play();
