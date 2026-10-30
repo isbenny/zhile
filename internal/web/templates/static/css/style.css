@@ -2716,3 +2716,11 @@ body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-list { border-color: #333; }
     body:not(.tv-ui) .aplayer.aplayer-fixed { transform: none; bottom: env(safe-area-inset-bottom) !important; }
     body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-body { width: 100% !important; max-width: 100% !important; border-radius: 12px 12px 0 0 !important; }
 }
+body:not(.tv-ui) .settings-tabs { background: #282828; border-color: #333; }
+body:not(.tv-ui) .settings-tab:hover { background: #333; color: #fff; }
+body:not(.tv-ui) .settings-section-icon { background: #193525; color: #1ed760; }
+body:not(.tv-ui) .lyric-font-preview { background: #193525; color: #1ed760; border-color: #326344; }
+body:not(.tv-ui) .shortcut-clear-btn { background: #333; color: #b3b3b3; border-color: #535353; }
+body:not(.tv-ui) .song-list-tool-action.is-primary { background: #1ed760; color: #000; }
+body:not(.tv-ui) .song-list-tool-field select { background: #282828; color: #fff; }
+body:not(.tv-ui) .aplayer .aplayer-list { background: #242424; }
