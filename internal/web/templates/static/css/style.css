@@ -2724,3 +2724,16 @@ body:not(.tv-ui) .shortcut-clear-btn { background: #333; color: #b3b3b3; border-
 body:not(.tv-ui) .song-list-tool-action.is-primary { background: #1ed760; color: #000; }
 body:not(.tv-ui) .song-list-tool-field select { background: #282828; color: #fff; }
 body:not(.tv-ui) .aplayer .aplayer-list { background: #242424; }
+body:not(.tv-ui) :is(.utility-modal-list, .download-records-list, .aplayer .playback-queue-toolbar, .batch-download-confirm) { background: #242424; border-color: #3c3c3c; color: #b3b3b3; }
+body:not(.tv-ui) :is(.queue-refresh, .queue-secondary-action, .container-download-button) { background: #193525; color: #1ed760; border-color: #326344; }
+body:not(.tv-ui) :is(.btn-pill-danger, .queue-delete-button) { background: #3b1c23; color: #ff8d9b; border-color: #66313b; }
+body:not(.tv-ui) :is(.queue-tabs button, .queue-note, .queue-overview small, .queue-overview span, .queue-outcomes, .queue-task-main span, .queue-task-main small, .queue-status) { color: #b3b3b3; }
+body:not(.tv-ui) :is(.queue-tabs button[aria-selected="true"], .queue-overview strong, .queue-status-downloading, .queue-status-success) { color: #1ed760; }
+body:not(.tv-ui) .queue-task-main strong { color: #fff; }
+body:not(.tv-ui) .queue-tabs, body:not(.tv-ui) .queue-task { border-color: #3c3c3c; }
+body:not(.tv-ui) .queue-status-failed { color: #ff8d9b; }
+body:not(.tv-ui) .batch-download-confirm button[value="cancel"] { background: #333; color: #fff; border-color: #535353; }
+body:not(.tv-ui) .source-card { background: #242424; }
+body:not(.tv-ui) :is(.btn-switch, .btn-fav, .btn-dl:not(.btn-download), .rt-form button, .rt-page-num) { background: #282828; color: #b3b3b3; border-color: #3c3c3c; }
+body:not(.tv-ui) :is(.btn-switch, .btn-fav, .btn-dl):hover { background: #333; color: #1ed760; border-color: #535353; }
+body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-pic { background-color: #282828 !important; }
