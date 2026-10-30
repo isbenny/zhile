@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#121212"><title>电脑版安装 · 知乐</title><meta name="description" content="把知乐装到自己的电脑。复制提示词，让 AI 助手为 Mac、Windows 或 Linux 安装知乐并创建桌面快捷方式。"><link rel="canonical" href="https://music.cnxwkj.com/desktop.html"><link rel="icon" href="assets/icon.png"><link rel="stylesheet" href="assets/style.css?v=0.2.1"><link rel="stylesheet" href="assets/desktop.css?v=1"><script src="assets/desktop.js?v=1" defer></script></head>
+<body><header class="shell masthead"><a class="brand" href="./"><img src="assets/icon.png" width="42" height="42" alt=""><span>知乐<span class="cn">ZHILE</span></span></a><nav aria-label="主导航"><a href="./#download">手机下载</a><a href="about.html">作者 Benny ↗</a></nav></header>
+<main class="shell legal-copy desktop-guide"><p class="eyebrow">DESKTOP · YOUR MUSIC, YOUR SPACE</p><h1>把知乐，<br>留在你的桌面。</h1><p class="lead">发一个链接，复制一段话。<br>让你的 AI 助手帮你装好。</p>
+<div class="desktop-platforms"><span>macOS</span><span>Windows</span><span>Linux</span></div>
+<p class="legal-status">当前提供源码安装方案，暂无可直接下载的 DMG、Windows 安装程序或 Linux 安装包。Mac 原生窗口版已在 Apple 芯片 Mac 上完成本地构建与启动验证；Windows、Linux 和 Intel Mac 尚未完成真机验证。</p>
+<section class="ai-install" aria-labelledby="ai-title"><div class="copy-heading"><div><p class="eyebrow">INSTALL WITH AI</p><h2 id="ai-title">交给你的 AI 助手</h2></div><button class="copy-install" type="button" id="copy-install">复制安装提示词</button></div><p>将下面这段话发给<strong>能操作你电脑的 AI 助手</strong>。普通聊天助手只能提供指导，不能直接完成安装。</p><label class="prompt-label" for="install-prompt">安装提示词（可直接选择复制）</label><textarea id="install-prompt" readonly spellcheck="false">请帮我在当前电脑上安装「知乐 Zhile」，并创建带知乐图标的桌面快捷方式。
+仓库：https://github.com/isbenny/zhile
+安装说明：https://music.cnxwkj.com/desktop.html
+先识别系统和 CPU 架构，阅读仓库 docs/BUILD.md 及相关安装脚本，再执行安装。已有安装先备份配置，不覆盖或删除我的歌单和音乐文件。
+Mac 优先从源码运行 script/build_and_run.sh --verify，安装原生窗口版；Windows / Linux 构建 cmd/music-dl，以仅本机访问的 Web 模式启动，并创建能同时启动服务、打开浏览器的快捷方式。
+检查 Git、Go 1.27 和各平台需要的编译工具，只从官方渠道安装缺少的依赖；需要音频标签或转码时再配置 FFmpeg。不要把 APK 当电脑版，也不要关闭系统安全保护或把服务开放到公网。
+完成后实际打开应用，验证启动和搜索界面，告诉我安装位置、数据位置及以后如何启动和更新。</textarea><p class="copy-status" id="copy-status" role="status" aria-live="polite">复制后，粘贴到你自己的 AI 助手中。</p></section>
+<section><h2>分享给朋友，只需三步</h2><ol class="ios-steps"><li><strong>把当前网页发给朋友。</strong>打开 music.cnxwkj.com/desktop.html。</li><li><strong>点击“复制安装提示词”。</strong>交给朋友自己电脑上的 AI 助手执行。</li><li><strong>从桌面启动知乐。</strong>在朋友电脑本地运行，无需连接你的电脑。</li></ol></section>
+<section><h2>想自己安装？</h2><p>先安装 Git 和 Go 1.27。下面命令需要在终端执行；如果已有同名文件夹，请使用新的安装目录。源码默认取仓库 main 分支，安装前可记录提交编号，便于以后回退。</p>
+<details><summary>Mac · 原生窗口与桌面图标</summary><p>需要 macOS 12 或更新版本、Xcode Command Line Tools 和 Python 3。缺少苹果编译工具时，先运行 <code>xcode-select --install</code> 并完成系统安装提示。</p><pre><code>git clone https://github.com/isbenny/zhile.git
+cd zhile
+./script/build_and_run.sh --verify</code></pre><p>安装到 <code>~/Applications/知乐.app</code>，同时创建桌面“知乐”图标。按当前 Mac 架构编译，首次构建需要下载依赖。</p></details>
+<details><summary>Windows · 本机浏览器版</summary><p>在 PowerShell 执行：</p><pre><code>git clone https://github.com/isbenny/zhile.git
+cd zhile
+go build -o zhile.exe ./cmd/music-dl
+.\zhile.exe web --desktop --port 37777</code></pre><p>保持终端运行，再在浏览器打开 <code>http://127.0.0.1:37777/music/</code>。让 AI 助手创建固定工作目录的启动快捷方式，以后无需重复输入命令。</p></details>
+<details><summary>Linux · 本机浏览器版</summary><pre><code>git clone https://github.com/isbenny/zhile.git
+cd zhile
+go build -o zhile ./cmd/music-dl
+./zhile web --desktop --port 37777</code></pre><p>保持进程运行，在浏览器打开 <code>http://127.0.0.1:37777/music/</code>。可让 AI 助手按你的桌面环境创建启动器。</p></details>
+</section><section><h2>装好之后</h2><ul><li><strong>数据留在自己电脑。</strong>Mac 窗口版使用 <code>~/Library/Application Support/music-dl</code>；上面的浏览器版默认使用启动目录中的 <code>data/</code>。下载目录可在应用设置中查看和调整。</li><li><strong>更新电脑版需要重新构建。</strong>让 AI 先备份数据、查看代码更新，再重新安装；保留原有数据目录。网页更新不会自动替换已安装的电脑应用。</li><li><strong>端口已占用时先检查。</strong>可能已有知乐在运行。不要直接结束不认识的进程；浏览器版可以改用其他空闲端口。</li><li><strong>仅供学习与技术交流。</strong>请仅使用自有或已获授权的音乐。在线音源的可用性由各来源决定。</li></ul><p><a href="https://github.com/isbenny/zhile/blob/main/docs/BUILD.md#电脑版">完整安装与更新说明 ↗</a> · <a href="ios.html">iPhone / iPad 使用方案 ↗</a></p></section>
+<a class="ios-action" href="./">返回下载首页 ↗</a></main>
+<footer class="shell footer"><div><strong>知乐</strong><span>听见喜欢，乐在其中。</span></div><p><a href="LICENSE.txt">AGPL-3.0</a> · <a href="legal.html#privacy">隐私说明</a> · <a href="legal.html#copyright">侵权投诉／侵删</a><br>由 <a href="about.html">Benny · AI Developer</a> 开发与维护</p></footer></body></html>

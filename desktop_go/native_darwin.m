@@ -13,8 +13,8 @@ void music_dl_install_edit_menu(void) {
     // menu or a Quit item. Always ensure Command-Q has an explicit target.
     NSMenu *appMenu = bar.numberOfItems ? [[bar itemAtIndex:0] submenu] : nil;
     if (!appMenu || [appMenu.title isEqualToString:@"编辑"]) {
-        NSMenuItem *appItem = [[NSMenuItem alloc] initWithTitle:@"music-dl" action:nil keyEquivalent:@""];
-        appMenu = [[NSMenu alloc] initWithTitle:@"music-dl"];
+        NSMenuItem *appItem = [[NSMenuItem alloc] initWithTitle:@"知乐" action:nil keyEquivalent:@""];
+        appMenu = [[NSMenu alloc] initWithTitle:@"知乐"];
         [appItem setSubmenu:appMenu];
         [bar insertItem:appItem atIndex:0];
     }
@@ -25,7 +25,7 @@ void music_dl_install_edit_menu(void) {
             break;
         }
     }
-    if (!quit) quit = [appMenu addItemWithTitle:@"退出 music-dl" action:@selector(terminate:) keyEquivalent:@"q"];
+    if (!quit) quit = [appMenu addItemWithTitle:@"退出知乐" action:@selector(terminate:) keyEquivalent:@"q"];
     [quit setTarget:NSApp];
     [quit setKeyEquivalent:@"q"];
     [quit setKeyEquivalentModifierMask:NSEventModifierFlagCommand];

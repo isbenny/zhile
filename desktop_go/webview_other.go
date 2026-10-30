@@ -29,7 +29,7 @@ func main() {
 	if err := configureNativeDesktop(w); err != nil {
 		log.Printf("native desktop setup failed: %v", err)
 	}
-	w.SetTitle("music-dl-desktop-go")
+	w.SetTitle("知乐")
 	w.SetSize(1350, 780, webview.Hint(webview.HintNone))
 	w.Navigate(target)
 
