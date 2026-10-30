@@ -6873,7 +6873,12 @@ try {
 
 window.ap = ap;
 // Keep the player available as a full-width mobile transport bar.
-if (ap && window.matchMedia("(max-width: 768px)").matches) ap.setMode("normal");
+const mobilePlayerViewport = window.matchMedia("(max-width: 768px)");
+function expandMobilePlayer() {
+  if (ap && mobilePlayerViewport.matches) ap.setMode("normal");
+}
+expandMobilePlayer();
+mobilePlayerViewport.addEventListener("change", expandMobilePlayer);
 
 function resumeVideoGenAudioRouting() {
   const videoGen = window.VideoGen;
