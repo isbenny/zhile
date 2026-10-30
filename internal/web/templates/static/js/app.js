@@ -1581,7 +1581,7 @@ function ensureSongActionFold(card) {
   }
 
   Array.from(actions.children).forEach((action) => {
-    if (action.classList.contains("btn-dl")) {
+    if (action.matches(".btn-dl:not(.btn-download), .btn-switch, .btn-fav")) {
       moreActions.appendChild(action);
     }
   });
@@ -1591,8 +1591,8 @@ function ensureSongActionFold(card) {
     toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "btn-circle mobile-more-toggle";
-    toggle.title = "更多下载操作";
-    toggle.setAttribute("aria-label", "更多下载操作");
+    toggle.title = "更多操作";
+    toggle.setAttribute("aria-label", "更多操作");
     toggle.setAttribute("aria-expanded", "false");
     toggle.innerHTML =
       '<i class="fa-solid fa-ellipsis" aria-hidden="true"></i>';
@@ -1607,7 +1607,7 @@ function ensureSongActionFold(card) {
   }
 
   const hasDownloadActions = Boolean(
-    moreActions.querySelector(".btn-dl"),
+    moreActions.querySelector("button, a"),
   );
   toggle.hidden = !hasDownloadActions;
   if (!hasDownloadActions) {
@@ -3602,7 +3602,7 @@ function showDuplicateModal(groups, loading, pagination = {}) {
               url: buildStreamURL(s.id, "local", s.name, s.artist, "", "", ""),
               cover: "",
               lrc: "",
-              theme: "#10b981",
+              theme: "#1ed760",
               custom_id: s.id,
               source: "local",
               duration: s.duration || 0,
@@ -5417,7 +5417,7 @@ function playPlaybackHistoryItem(index) {
     cover: song.cover,
     lrc: lyricURLs.line,
     raw_lrc: lyricURLs.auto,
-    theme: "#10b981",
+    theme: "#1ed760",
     custom_id: song.id,
     source: song.source,
     duration: song.duration,
@@ -6751,7 +6751,7 @@ try {
     container: document.getElementById("aplayer"),
     fixed: true,
     autoplay: false,
-    theme: "#10b981",
+    theme: "#1ed760",
     loop: "all",
     order: "list",
     preload: "metadata",
@@ -6765,6 +6765,8 @@ try {
 }
 
 window.ap = ap;
+// Keep the player available as a full-width mobile transport bar.
+if (ap && window.matchMedia("(max-width: 768px)").matches) ap.setMode("normal");
 
 function resumeVideoGenAudioRouting() {
   const videoGen = window.VideoGen;
@@ -6791,6 +6793,7 @@ function syncPlayerTrackControls() {
   const hasTracks = Boolean(ap?.list?.audios?.length);
   player?.classList.toggle("is-empty", !hasTracks);
   if (!player) return;
+  if (!hasTracks && ap?.template?.title) ap.template.title.textContent = "尚未播放";
   syncPlaybackQueueControls(player);
 
   const controls = [
@@ -7694,7 +7697,7 @@ function playbackEntryFromSong(song) {
   return {
     name:playback.name, artist:playback.artist, album:playback.album || "",
     url:buildStreamURL(playback.id, playback.source, playback.name, playback.artist, playback.album || "", playback.cover || "", playback.extra || ""),
-    cover:song.cover || "", lrc:lyrics.line, raw_lrc:lyrics.auto, theme:"#10b981",
+    cover:song.cover || "", lrc:lyrics.line, raw_lrc:lyrics.auto, theme:"#1ed760",
     custom_id:playback.id, original_id:song.id, original_source:song.source,
     source:playback.source, duration:playback.duration || 0, extra:playback.extra || "",
   };
@@ -8095,7 +8098,7 @@ function getSelectedSongs() {
         cover: song.cover,
         lrc: lyricURLs.line,
         raw_lrc: lyricURLs.auto,
-        theme: "#10b981",
+        theme: "#1ed760",
       });
     }
   });
@@ -9439,3 +9442,16 @@ async function removePlaybackQueueTrack(index) {
   try { await savePlaybackQueueNow(); }
   catch (error) { reportPlaybackSessionError(error); }
 }
+
+// Mobile utility disclosure keeps secondary actions available without obscuring songs.
+function toggleMobileUtilities(button) {
+  const toolbar = document.getElementById("utility-toolbar");
+  if (!toolbar) return;
+  const expanded = toolbar.classList.toggle("mobile-open");
+  button.setAttribute("aria-expanded", String(expanded));
+}
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  document.getElementById("utility-toolbar")?.classList.remove("mobile-open");
+  document.querySelector('[aria-controls="utility-toolbar"]')?.setAttribute("aria-expanded", "false");
+});

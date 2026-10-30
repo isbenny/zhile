@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="referrer" content="no-referrer">
     <title>music-dl - 聚合搜索与解析</title>
     <link rel="icon" href="{{.Root}}/icon.png" type="image/png">
@@ -17,7 +17,7 @@
 <body>
 
 <!-- 右侧工具栏：设置、历史和本地音乐在所有页面均可使用 -->
-<div class="right-toolbar">
+<div class="right-toolbar" id="utility-toolbar" aria-label="常用工具">
     <!-- 功能按钮组 -->
     <div class="rt-btn" onclick="openSystemConfig()" title="系统配置"><i class="fa-solid fa-gear"></i></div>
     <form id="auth-float-form" class="rt-form" action="{{.Root}}/logout" method="post" title="登录">

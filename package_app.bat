@@ -112,7 +112,7 @@ echo Building!
 "%GOGIO_BIN%" -target android ^
  -buildmode exe ^
  -o ../music-dl.apk ^
- -appid com.musicdl.app.util ^
+ -appid io.github.isbenny.musicdl ^
  -name MusicDL ^
  -version %VERSION% ^
  -icon ../winres/icon_256x256.png ^

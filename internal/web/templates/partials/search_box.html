@@ -1,6 +1,13 @@
 {{define "search_box"}}
 <div class="search-box">
-    <h1>🎵 <a href="https://github.com/guohuiyuan/go-music-dl" target="_blank" style="color: inherit; text-decoration: none;">music-dl</a></h1>
+    <header class="music-header">
+        <h1><a href="https://github.com/isbenny/go-music-dl" target="_blank" rel="noopener"><i class="fa-solid fa-music" aria-hidden="true"></i> music-dl</a></h1>
+        <div class="mobile-header-actions">
+            <button type="button" onclick="openSystemConfig()" aria-label="系统配置"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+            <button type="button" onclick="openDownloadRecordsModal()" aria-label="下载管理"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
+            <button type="button" onclick="toggleMobileUtilities(this)" aria-label="更多功能" aria-controls="utility-toolbar" aria-expanded="false"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
+        </div>
+    </header>
     <form action="{{.Root}}/search" method="get" id="search-form">
         <input type="hidden" name="page" value="1">
         <input type="hidden" name="page_size" id="page-size-hidden" value="{{.PageSize}}">
@@ -30,9 +37,8 @@
             <button type="submit" class="search-btn" title="搜索" aria-label="搜索"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
         </div>
 
-        <div class="quick-actions" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
-            <button type="button" class="btn-pill btn-pill-primary" onclick="goToRecommend()"
-                style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); border: none; box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4); justify-content:center;">
+        <div class="quick-actions">
+            <button type="button" class="btn-pill btn-pill-primary" onclick="goToRecommend()">
                 <i class="fa-solid fa-fire"></i> 每日推荐歌单
             </button>
             <button type="button" class="btn-pill btn-pill-fav" onclick="openCollectionManager()">
