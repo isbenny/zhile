@@ -1354,6 +1354,7 @@
         openActionSheet({title:this.data?.name||'播放选项',subtitle:'知乐 · 歌曲操作',cover:this.data?.cover,trigger,entries:[
           {label:'添加到歌单',icon:'fa-solid fa-circle-plus',run:()=>addCurrentTrackToCollection()},
           {label:'播放列表',icon:'fa-solid fa-list-ul',run:()=>this.openQueue()},
+          {label:'播放模式：'+(document.querySelector('.playmode-toggle-btn')?.title||'顺序播放'),icon:'fa-solid fa-repeat',run:()=>{const mode=document.querySelector('.playmode-toggle-btn');if(mode){mode.click();showNotice('已切换为'+mode.title);}}},
           {label:'音频与视频工具',icon:'fa-solid fa-sliders',divider:true,run:()=>{const tools=document.getElementById('vg-tools-panel');tools.hidden=false;tools.scrollIntoView({behavior:'auto',block:'center'});}},
         ]});
       },

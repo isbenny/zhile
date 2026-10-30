@@ -2892,3 +2892,4 @@ body:not(.tv-ui) .home-search{margin-bottom:18px;padding-bottom:0}.home-search .
 
 @media(max-width:768px){body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-body{box-sizing:border-box!important;right:0!important;width:100%!important;max-width:100%!important}}
 .source-card .source-identity + .source-desc{display:none!important}.source-card .source-identity{font-size:12px;font-weight:500;color:#b3b3b3;margin:0}.source-checkbox:checked + .source-card .source-identity{color:#1ed760}
+@media(max-width:768px){body:not(.tv-ui) .aplayer.aplayer-fixed .player-speed-wrap,body:not(.tv-ui) .aplayer.aplayer-fixed .playmode-toggle-btn{display:none!important}}
