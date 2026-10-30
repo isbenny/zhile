@@ -6,7 +6,7 @@
 
 1. 在面板新建 `music.cnxwkj.com` 静态网站，配置域名解析与 HTTPS。大陆主机上线前，通过接入商核实并办理网站 ICP 备案；App 按实际服务办理 APP 备案。备案不等于获得音乐版权授权。
 2. 用户确认发布、完成发布前核验后，再构建签名 APK 和对应源码。运行打包脚本生成的网站含 `index.html`、`about.html`、`legal.html`、`ios.html`、`assets/`、`downloads/`、`update.json`、许可证与声明。
-3. 上传网站内容；不要把源码仓库、SQLite 数据库、Cookie、签名密钥或配置目录直接作为网站根目录。不要反向代理个人应用的 `/music` 接口。网站只分发审核过的安装包和源码，App 的音乐与歌单留在用户设备中。
+3. 上传网站内容；不要把源码仓库、SQLite 数据库、Cookie、签名密钥或配置目录直接作为网站根目录。默认模式仅保护设置，不可直接公开反向代理 `/music` 接口。个人 iPhone 远程访问必须启用下文的全站私有模式。网站只分发审核过的安装包和源码，App 的音乐与歌单留在用户设备中。
 4. 先确认安装包和源码完整可下载，最后上传 `update.json`。固定 URL 不使用长期缓存；建议文件先上传为临时名，再原子替换。域名及 CDN 都应对 `update.json` 和固定名称 APK 使用 `Cache-Control: no-cache`。
 5. 用真实安卓设备验证首次安装、覆盖升级、导入本地文件、播放及收藏，检查权限和实际联网行为后再向公众推广。
 
@@ -46,3 +46,23 @@ python3 scripts/download_stats.py /实际日志路径/zhile-downloads.jsonl
 - [Android 发布](https://developer.android.com/studio/publish)、[应用更新](https://developer.android.com/google/play/app-updates)
 - [Nginx 日志模块](https://nginx.org/en/docs/http/ngx_http_log_module.html)
 - 详见 [LEGAL_REVIEW.md](LEGAL_REVIEW.md)。示例配置未部署，不代表备案、授权、隐私或法律审查已经完成。
+
+## 个人 iPhone 网页实例
+
+`web --private` 对搜索、播放、歌单、下载、设置和数据接口统一要求登录；登录页、初始化页、健康检查和内嵌静态资源保留访问。默认桌面与原有 Web 行为保持不变。它仍是单一所有者空间，不提供多用户隔离或公开注册。
+
+推荐部署：专用无登录系统用户 `zhile-personal`，程序放在 `/opt/zhile-personal`，数据放在 `/var/lib/zhile-personal`，只监听 `127.0.0.1:37910`。示例 systemd 安装脚本是 `deployment/install-personal-service.sh`；需使用受信任构建的 Linux x86_64 二进制及其 SHA256SUMS.txt。程序参数：
+
+```sh
+zhile web --host 127.0.0.1 --port 37910 --private --secure-cookies --no-browser
+```
+
+`--secure-cookies` 用于 HTTPS 反向代理，始终给会话 Cookie 加上 Secure；保留 HttpOnly、SameSite=Lax。普通 HTTP 的本机测试请勿启用此标志。客户端伪造 X-Forwarded-Proto 不会改变 Cookie 策略。
+
+`deployment/nginx-personal.conf.example` 是对应的 `/music/` 代理配置。备份现有站点配置后，验证 Nginx 配置再重载。只有在确认全站私有模式已经生效后才启用远程入口，不要对外开放后台服务端口。
+
+首次设置需要服务日志中的一次性初始化令牌，密码由所有者直接在 HTTPS 页面中填写。令牌和会话密钥不可放入 URL、下载网站或公开仓库。完成设置后令牌失效，之后使用个人账号登录。
+
+iPhone 用 Safari 打开个人实例的 `/music/`，登录后通过分享菜单添加到主屏幕。提供 manifest 与苹果主屏幕图标；不提供离线音乐服务，后台和锁屏播放仍需真机验证。服务器常驻，不依赖 Mac 开机。服务器音乐库与各设备原有本地库独立，不自动同步。
+
+常用维护：`systemctl status zhile-personal`、`systemctl restart zhile-personal`。备份 `/var/lib/zhile-personal`（包含私人 Cookie 和会话信息，请加密保存）。分享下载网站不会授予别人个人实例的登录权限。

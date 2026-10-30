@@ -208,12 +208,12 @@ func validateSessionValue(settings core.WebAuthSettings, value string, now time.
 
 func setAuthCookie(c *gin.Context, value string) {
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(authCookieName, value, int(sessionMaxAge.Seconds()), RoutePrefix, "", c.Request.TLS != nil, true)
+	c.SetCookie(authCookieName, value, int(sessionMaxAge.Seconds()), RoutePrefix, "", c.Request.TLS != nil || c.GetBool("SecureCookies"), true)
 }
 
 func clearAuthCookie(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(authCookieName, "", -1, RoutePrefix, "", c.Request.TLS != nil, true)
+	c.SetCookie(authCookieName, "", -1, RoutePrefix, "", c.Request.TLS != nil || c.GetBool("SecureCookies"), true)
 }
 
 func safeAuthRedirectTarget(raw string) string {
@@ -285,7 +285,7 @@ func authRequired(provider authSettingsProvider) gin.HandlerFunc {
 }
 
 func renderAuthPage(c *gin.Context, mode string, errMsg string, username string) {
-	title := "登录 music-dl"
+	title := "登录知乐"
 	action := RoutePrefix + "/login"
 	button := "登录"
 	if mode == "setup" {
@@ -295,14 +295,15 @@ func renderAuthPage(c *gin.Context, mode string, errMsg string, username string)
 	}
 
 	c.HTML(http.StatusOK, "auth.html", gin.H{
-		"Root":     RoutePrefix,
-		"Title":    title,
-		"Mode":     mode,
-		"Action":   action,
-		"Button":   button,
-		"Error":    errMsg,
-		"Username": username,
-		"Next":     safeAuthRedirectTarget(c.Query("next")),
+		"Root":        RoutePrefix,
+		"Title":       title,
+		"Mode":        mode,
+		"Action":      action,
+		"Button":      button,
+		"Error":       errMsg,
+		"Username":    username,
+		"Next":        safeAuthRedirectTarget(c.Query("next")),
+		"PrivateMode": c.GetBool("PrivateMode"),
 	})
 }
 

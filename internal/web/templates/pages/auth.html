@@ -6,6 +6,11 @@
     <meta name="referrer" content="no-referrer">
     <title>{{.Title}}</title>
     <link rel="icon" href="{{.Root}}/icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="{{.Root}}/icon.png">
+    <link rel="manifest" href="{{.Root}}/manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="知乐">
+    <meta name="theme-color" content="#121212">
     <link rel="stylesheet" href="{{.Root}}/style.css">
     <link rel="stylesheet" href="{{.Root}}/vendor/fontawesome/css/all.min.css">
 </head>
@@ -17,7 +22,9 @@
             <span>知乐</span>
         </a>
         <h1>{{.Title}}</h1>
-        {{ if eq .Mode "setup" }}
+        {{ if .PrivateMode }}
+        <p class="auth-hint">这是个人音乐空间。只有完成账号设置并登录后，才能搜索、播放和访问歌单。</p>
+        {{ else if eq .Mode "setup" }}
         <p class="auth-hint">首次打开系统配置需要创建本地管理员账号，用来保护 Cookie 和系统设置。</p>
         {{ else }}
         <p class="auth-hint">请输入本地管理员账号，继续管理 Cookie 和系统设置。</p>

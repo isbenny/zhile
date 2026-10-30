@@ -1,0 +1,21 @@
+# Insert within the music.cnxwkj.com server block after backing it up.
+# This requires the application to run with --private and --secure-cookies.
+location = /music {
+    return 302 /music/;
+}
+location ^~ /music/ {
+    proxy_pass http://127.0.0.1:37910;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+    client_max_body_size 128m;
+    proxy_cookie_flags music_dl_session secure httponly samesite=lax;
+    add_header Cache-Control "private, no-store" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+}

@@ -559,6 +559,8 @@ type StartOptions struct {
 	DisableAuth       bool
 	ListenHost        string
 	BasePath          string
+	RequireAuthForAll bool
+	SecureCookies     bool
 }
 
 func Start(port string, shouldOpenBrowser bool, basePath string) {
@@ -573,6 +575,10 @@ func StartDesktop(port string) {
 }
 
 func StartWithOptions(port string, opts StartOptions) {
+	if opts.RequireAuthForAll && opts.DisableAuth {
+		fmt.Fprintln(os.Stderr, "Private mode requires authentication")
+		return
+	}
 	RoutePrefix = NormalizeBasePath(opts.BasePath)
 	if publicLocalOnly {
 		opts.ListenHost = "127.0.0.1"
@@ -595,6 +601,11 @@ func StartWithOptions(port string, opts StartOptions) {
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("PrivateMode", opts.RequireAuthForAll)
+		c.Set("SecureCookies", opts.SecureCookies)
+		c.Next()
+	})
 	r.Use(corsMiddleware(), gzipMiddleware())
 
 	tmpl := template.Must(template.New("").Funcs(template.FuncMap{
@@ -636,6 +647,11 @@ func StartWithOptions(port string, opts StartOptions) {
 
 	// Static assets embedded at build time.
 	api.GET("/icon.png", func(c *gin.Context) { c.FileFromFS("templates/static/images/icon.png", http.FS(templateFS)) })
+	api.GET("/manifest.webmanifest", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Content-Type", "application/manifest+json")
+		c.JSON(http.StatusOK, gin.H{"id": RoutePrefix + "/", "name": "知乐", "short_name": "知乐", "start_url": RoutePrefix + "/", "scope": RoutePrefix + "/", "display": "standalone", "background_color": "#121212", "theme_color": "#121212", "icons": []gin.H{{"src": RoutePrefix + "/icon.png", "sizes": "any", "type": "image/png", "purpose": "any"}}})
+	})
 	api.GET("/style.css", func(c *gin.Context) { c.FileFromFS("templates/static/css/style.css", http.FS(templateFS)) })
 	api.GET("/videogen.css", func(c *gin.Context) { c.FileFromFS("templates/static/css/videogen.css", http.FS(templateFS)) })
 	api.GET("/videogen.js", func(c *gin.Context) { c.FileFromFS("templates/static/js/videogen.js", http.FS(templateFS)) })
@@ -755,6 +771,10 @@ func embeddedVendorFS() (fs.FS, error) {
 
 func bindAuthMiddleware(api *gin.RouterGroup, opts StartOptions) *gin.RouterGroup {
 	bindAuthRoutes(api)
+	if opts.RequireAuthForAll {
+		api.Use(authRequired(core.GetWebAuthSettings))
+		return api
+	}
 	if opts.DisableAuth {
 		return api
 	}

@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +11,78 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/guohuiyuan/go-music-dl/core"
 )
+
+func TestPrivateModeProtectsMusicAndDataRoutes(t *testing.T) {
+	t.Setenv("MUSIC_DL_CONFIG_DB", filepath.Join(t.TempDir(), "private-settings.db"))
+	settings := core.WebAuthSettings{Username: "owner", PasswordHash: "test-hash", SessionSecret: "test-private-secret"}
+	if err := core.SaveWebAuthSettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	router := gin.New()
+	api := router.Group(RoutePrefix)
+	api.GET("/icon.png", func(c *gin.Context) { c.Status(http.StatusOK) })
+	config := bindAuthMiddleware(api, StartOptions{RequireAuthForAll: true})
+	for _, path := range []string{"/search", "/stream", "/my_collections", "/settings", "/videos/test.mp4"} {
+		api.GET(path, func(c *gin.Context) { c.Status(http.StatusOK) })
+	}
+	api.POST("/download", func(c *gin.Context) { c.Status(http.StatusOK) })
+	config.GET("/cookies", func(c *gin.Context) { c.Status(http.StatusOK) })
+	session, err := createSessionValue(settings, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"/search", "/stream", "/my_collections", "/settings", "/videos/test.mp4", "/cookies", "/download"} {
+		for _, cookie := range []string{"", session + "tampered", session} {
+			method := http.MethodGet
+			if path == "/download" {
+				method = http.MethodPost
+			}
+			req := httptest.NewRequest(method, RoutePrefix+path, nil)
+			req.Header.Set("Accept", "application/json")
+			if cookie != "" {
+				req.AddCookie(&http.Cookie{Name: authCookieName, Value: cookie})
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			want := http.StatusUnauthorized
+			if cookie == session {
+				want = http.StatusOK
+			}
+			if rec.Code != want {
+				t.Fatalf("%s authenticated=%v: got %d want %d", path, cookie == session, rec.Code, want)
+			}
+		}
+	}
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest("GET", RoutePrefix+"/icon.png", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatal("login icon must remain public")
+	}
+}
+
+func TestExplicitSecureCookiesBehindHTTPSProxy(t *testing.T) {
+	for _, secure := range []bool{false, true} {
+		for _, clear := range []bool{false, true} {
+			router := gin.New()
+			router.GET("/", func(c *gin.Context) {
+				c.Set("SecureCookies", secure)
+				if clear {
+					clearAuthCookie(c)
+				} else {
+					setAuthCookie(c, "test-session")
+				}
+			})
+			req := httptest.NewRequest("GET", "http://localhost/", nil)
+			req.Header.Set("X-Forwarded-Proto", "https")
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			cookies := rec.Result().Cookies()
+			if len(cookies) != 1 || cookies[0].Secure != secure || !cookies[0].HttpOnly || cookies[0].SameSite != http.SameSiteLaxMode {
+				t.Fatalf("unexpected cookie attributes: %s", rec.Header().Get("Set-Cookie"))
+			}
+		}
+	}
+}
 
 func TestPrepareSetupTokenLifecycle(t *testing.T) {
 	resetAuthRuntimeForTest()
