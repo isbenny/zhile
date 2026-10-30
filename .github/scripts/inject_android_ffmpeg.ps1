@@ -81,7 +81,7 @@ function Add-ApkAssets {
     }
 
     foreach ($abi in $Abis) {
-        foreach ($tool in @("ffmpeg", "ffprobe", "libc++_shared.so")) {
+        foreach ($tool in @("ffmpeg", "ffprobe")) {
             $source = Join-Path $AssetsRootFull (Join-Path $abi $tool)
             if (-not (Test-Path $source)) {
                 throw "Missing bundled $tool for $abi at $source"

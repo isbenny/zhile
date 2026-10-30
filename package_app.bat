@@ -59,18 +59,7 @@ if not defined JAVA_VERSION (
 	exit /b 1
 )
 
-set "DEFAULT_VERSION=1.0.0.1"
-set "VERSION=%DEFAULT_VERSION%"
-set "COMMIT_COUNT="
-for /f "usebackq delims=" %%i in (`git rev-list --count HEAD 2^>nul`) do (
-    set "COMMIT_COUNT=%%i"
-)
-
-if "%COMMIT_COUNT%"=="" (
-    echo WARN: failed to get git commit count, fallback version: %DEFAULT_VERSION%
-) else (
-    set "VERSION=1.0.0.%COMMIT_COUNT%"
-)
+set "VERSION=0.1.0.1"
 
 echo android version: %VERSION%
 echo Using Java version %JAVA_VERSION%
@@ -112,10 +101,11 @@ echo Building!
 "%GOGIO_BIN%" -target android ^
  -buildmode exe ^
  -o ../music-dl.apk ^
- -appid io.github.isbenny.musicdl ^
- -name MusicDL ^
+ -appid io.github.isbenny.melofern ^
+ -name Melofern ^
  -version %VERSION% ^
- -icon ../winres/icon_256x256.png ^
+ -minsdk 24 ^
+ -icon ../brand/icon.png ^
  -slice ^
  -signkey "%ANDROID_KEYSTORE_FILE%" ^
  -signpass "%ANDROID_KEYSTORE_PASSWORD%" ^

@@ -2737,3 +2737,6 @@ body:not(.tv-ui) .source-card { background: #242424; }
 body:not(.tv-ui) :is(.btn-switch, .btn-fav, .btn-dl:not(.btn-download), .rt-form button, .rt-page-num) { background: #282828; color: #b3b3b3; border-color: #3c3c3c; }
 body:not(.tv-ui) :is(.btn-switch, .btn-fav, .btn-dl):hover { background: #333; color: #1ed760; border-color: #535353; }
 body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-pic { background-color: #282828 !important; }
+
+/* Melofern branding, modified 2026-10-30. */
+.brand-notice{padding:24px 20px 145px;text-align:center;color:#a7a7a7;font-size:12px;line-height:2}.brand-notice a{color:#b3b3b3;text-decoration:underline}.brand-notice a:hover{color:#1ed760}

@@ -326,7 +326,7 @@ func updatePlaybackServiceInfo(metadata playbackMetadata, playing bool) error {
 
 		title := metadata.Title
 		if title == "" {
-			title = "MusicDL"
+			title = "Melofern"
 		}
 		playingValue := uint64(0)
 		if playing {

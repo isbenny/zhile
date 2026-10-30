@@ -44,7 +44,7 @@ public final class MusicDLPlaybackService extends Service {
     private static final Object LOCK = new Object();
     private static MusicDLPlaybackService instance;
     private static boolean pendingPlaying;
-    private static String pendingTitle = "MusicDL";
+    private static String pendingTitle = "Melofern";
     private static String pendingArtist = "";
     private static String pendingAlbum = "";
     private static long pendingPositionMs;
@@ -67,7 +67,7 @@ public final class MusicDLPlaybackService extends Service {
     private boolean foregroundStarted;
     private boolean refreshScheduled;
     private boolean playing;
-    private String title = "MusicDL";
+    private String title = "Melofern";
     private String artist = "";
     private String album = "";
     private long positionMs;
@@ -95,7 +95,7 @@ public final class MusicDLPlaybackService extends Service {
         MusicDLPlaybackService service;
         synchronized (LOCK) {
             pendingPlaying = nowPlaying;
-            pendingTitle = safeText(nextTitle, "MusicDL");
+            pendingTitle = safeText(nextTitle, "Melofern");
             pendingArtist = safeText(nextArtist, "");
             pendingAlbum = safeText(nextAlbum, "");
             pendingPositionMs = Math.max(0, nextPositionMs);
@@ -105,7 +105,7 @@ public final class MusicDLPlaybackService extends Service {
         if (service != null) {
             service.applyPlayback(
                     nowPlaying,
-                    safeText(nextTitle, "MusicDL"),
+                    safeText(nextTitle, "Melofern"),
                     safeText(nextArtist, ""),
                     safeText(nextAlbum, ""),
                     Math.max(0, nextPositionMs),
@@ -123,7 +123,7 @@ public final class MusicDLPlaybackService extends Service {
         MusicDLPlaybackService service;
         synchronized (LOCK) {
             pendingPlaying = nowPlaying;
-            pendingTitle = safeText(nextTitle, "MusicDL");
+            pendingTitle = safeText(nextTitle, "Melofern");
             pendingArtist = safeText(nextArtist, "");
             pendingAlbum = safeText(nextAlbum, "");
             pendingPositionMs = Math.max(0, nextPositionMs);
@@ -133,7 +133,7 @@ public final class MusicDLPlaybackService extends Service {
         if (service != null) {
             service.applyPlayback(
                     nowPlaying,
-                    safeText(nextTitle, "MusicDL"),
+                    safeText(nextTitle, "Melofern"),
                     safeText(nextArtist, ""),
                     safeText(nextAlbum, ""),
                     Math.max(0, nextPositionMs),
@@ -337,7 +337,7 @@ public final class MusicDLPlaybackService extends Service {
                                 + "if(!p||!p.audio||!p.list||!Array.isArray(p.list.audios))"
                                 + "return '';var a=p.list.audios[p.list.index]||{};"
                                 + "var d=Number(p.audio.duration);var t=Number(p.audio.currentTime);"
-                                + "return JSON.stringify({title:String(a.name||'MusicDL'),"
+                                + "return JSON.stringify({title:String(a.name||'Melofern'),"
                                 + "artist:String(a.artist||''),album:String(a.album||''),"
                                 + "positionMs:Number.isFinite(t)?Math.max(0,Math.round(t*1000)):0,"
                                 + "durationMs:Number.isFinite(d)?Math.max(0,Math.round(d*1000)):0,"
@@ -369,7 +369,7 @@ public final class MusicDLPlaybackService extends Service {
             }
             applyPlayback(
                     data.optBoolean("playing", playing),
-                    safeText(data.optString("title"), "MusicDL"),
+                    safeText(data.optString("title"), "Melofern"),
                     safeText(data.optString("artist"), ""),
                     safeText(data.optString("album"), ""),
                     Math.max(0, data.optLong("positionMs", positionMs)),

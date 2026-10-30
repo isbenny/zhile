@@ -33,3 +33,7 @@ test_import.txt
 sync_and_pr.bat
 docker/
 tmp/
+# Melofern release outputs and build work
+/build/
+!/website/dist/
+!/website/dist/**

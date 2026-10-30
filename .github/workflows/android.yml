@@ -1,16 +1,40 @@
-name: Build Midnight Android
+name: Build Melofern Android
 on:
   push:
-    branches: [codex/spotify-style-android]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: midnight-android-${{ github.ref }}
+  group: melofern-android-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  build-ffmpeg:
+    name: Audio tools (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install NDK
+        run: sdkmanager 'ndk;27.0.12077973'
+      - name: Build pinned FFmpeg source
+        env:
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+        run: bash .github/scripts/build_ffmpeg_android.sh '${{ matrix.abi }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-${{ matrix.abi }}
+          path: desktop_app/ffmpeg/android/
+          retention-days: 7
   build-android-apk:
     name: Build Android APK
+    needs: build-ffmpeg
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -87,10 +111,12 @@ jobs:
           call "%SDKMANAGER%" --licenses < NUL
           call "%SDKMANAGER%" "platform-tools" "platforms;android-33" "build-tools;34.0.0" "ndk;27.0.12077973"
 
-      - name: Download Android FFmpeg binaries
-        shell: powershell
-        run: |
-          .\.github\scripts\download_android_ffmpeg.ps1 -OutputRoot .\desktop_app\ffmpeg\android
+      - name: Download source-built audio tools
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ffmpeg-*
+          merge-multiple: true
+          path: desktop_app/ffmpeg/android
 
       - name: Decode Android signing keystore
         shell: powershell
@@ -136,14 +162,26 @@ jobs:
           .\.github\scripts\verify_android_ffmpeg_apk.ps1 -ApkPath .\music-dl_arm64-v8a.apk -Abis arm64-v8a
           .\.github\scripts\verify_android_ffmpeg_apk.ps1 -ApkPath .\music-dl_x86_64.apk -Abis x86_64
 
+      - name: Verify app identity and rename release assets
+        shell: powershell
+        run: |
+          $aapt = "$env:ANDROID_HOME\build-tools\34.0.0\aapt.exe"
+          $info = & $aapt dump badging music-dl_arm64-v8a.apk
+          $info | Select-String "package:|application-label:|sdkVersion:"
+          if (-not ($info -match "io.github.isbenny.melofern")) { throw "Wrong application ID" }
+          if (-not ($info -match "application-label:'Melofern'")) { throw "Wrong application label" }
+          Copy-Item music-dl.apk melofern-universal.apk
+          Copy-Item music-dl_arm64-v8a.apk melofern-arm64.apk
+          Copy-Item music-dl_x86_64.apk melofern-x86_64.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: music-dl-midnight-android
+          name: melofern-android
           retention-days: 30
           if-no-files-found: error
           path: |
-            music-dl.apk
-            music-dl_arm64-v8a.apk
-            music-dl_x86_64.apk
+            melofern-universal.apk
+            melofern-arm64.apk
+            melofern-x86_64.apk
 

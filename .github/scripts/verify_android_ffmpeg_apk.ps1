@@ -38,14 +38,7 @@ foreach ($abi in $expandedAbis) {
             }
         }
 
-        $libcxxEntryName = "lib/$abi/libc++_shared.so"
-        $libcxxEntry = $zip.GetEntry($libcxxEntryName)
-        if ($null -eq $libcxxEntry) {
-            throw "$apkFull is missing $libcxxEntryName"
-        }
-        if ($libcxxEntry.Length -lt 1048576) {
-            throw "$libcxxEntryName in $apkFull is unexpectedly small ($($libcxxEntry.Length) bytes)"
-        }
+
     }
 }
 finally {
@@ -65,4 +58,4 @@ if ($LASTEXITCODE -ne 0) {
     throw "apksigner verify failed for $apkFull"
 }
 
-Write-Host "Verified bundled libffmpeg.so, libffprobe.so, and libc++_shared.so under lib/<abi> in $apkFull"
+Write-Host "Verified bundled libffmpeg.so, libffprobe.so under lib/<abi> in $apkFull"

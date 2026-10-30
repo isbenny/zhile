@@ -12,9 +12,9 @@
 <body class="auth-page">
 <main class="auth-shell">
     <section class="auth-card">
-        <a class="auth-brand" href="https://github.com/guohuiyuan/go-music-dl" target="_blank" rel="noopener">
+        <a class="auth-brand" href="https://github.com/isbenny/melofern" target="_blank" rel="noopener">
             <span class="auth-brand-icon">🎵</span>
-            <span>music-dl</span>
+            <span>Melofern</span>
         </a>
         <h1>{{.Title}}</h1>
         {{ if eq .Mode "setup" }}
@@ -37,7 +37,7 @@
                 <input type="text" name="setup_token" autocomplete="off" aria-describedby="setup-token-help" required>
             </label>
             <p id="setup-token-help" class="auth-field-hint">
-                在启动 go-music-dl 的终端中查找 <code>Web setup token:</code>。Docker Compose 可运行
+                在启动 go-Melofern 的终端中查找 <code>Web setup token:</code>。Docker Compose 可运行
                 <code>docker compose logs &lt;服务名&gt; | grep "Web setup token"</code>；Windows PowerShell 使用
                 <code>Select-String "Web setup token"</code>。
             </p>
