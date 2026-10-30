@@ -60,7 +60,7 @@ if not defined JAVA_VERSION (
 	exit /b 1
 )
 
-set "VERSION=0.1.0.1"
+set "VERSION=0.2.0.2"
 
 echo android version: %VERSION%
 echo Using Java version %JAVA_VERSION%

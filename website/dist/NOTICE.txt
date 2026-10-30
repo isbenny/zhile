@@ -28,3 +28,10 @@ The Go/Android/JDK toolchains are separately installed system build tools.
 The code license does not grant rights in third-party songs or platform marks.
 Only access/download content you are authorized to use.
 知乐 has no affiliation with Spotify or the supported music platforms.
+
+2026-10-30: Zhile v0.2.0 adds discovery, mobile navigation, a listening-first
+player and optional landing-page motion. Mood photography and design concepts
+were generated for Zhile. Actual playlist covers remain supplied by their sources.
+Platform identification icon origins and notices are listed in
+internal/web/templates/static/images/sources/NOTICE.txt; they are not claimed
+as Zhile's original marks or licensed exclusively under the code license.

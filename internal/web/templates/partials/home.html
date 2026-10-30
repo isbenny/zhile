@@ -1,0 +1,21 @@
+{{define "home"}}
+{{if .IsHome}}
+<main class="discovery-home" id="discovery-home" aria-label="音乐发现">
+  <div class="home-shortcuts"><button type="button" onclick="navigateTo(API_ROOT+'/my_collections')"><i class="fa-solid fa-heart" aria-hidden="true"></i><span>我的歌单</span><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button><button type="button" onclick="openPlaybackHistoryModal()"><i class="fa-regular fa-clock" aria-hidden="true"></i><span>最近播放</span><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div>
+  <section class="home-section" aria-labelledby="mood-title"><div class="home-section-heading"><h2 id="mood-title">此刻的心情</h2></div>
+    <div class="mood-grid">
+      <button type="button" class="mood-tile mood-focus" onclick="discoverMood('轻音乐')"><i class="fa-solid fa-leaf" aria-hidden="true"></i><strong>专注时刻</strong><span>轻音乐 · 陪你进入状态</span></button>
+      <button type="button" class="mood-tile mood-commute" onclick="discoverMood('流行')"><i class="fa-solid fa-train-subway" aria-hidden="true"></i><strong>通勤路上</strong><span>流行旋律 · 让路途轻快</span></button>
+      <button type="button" class="mood-tile mood-night" onclick="discoverMood('爵士')"><i class="fa-regular fa-moon" aria-hidden="true"></i><strong>夜晚放松</strong><span>爵士与慢歌 · 慢下来</span></button>
+      <button type="button" class="mood-tile mood-move" onclick="discoverMood('运动')"><i class="fa-solid fa-person-running" aria-hidden="true"></i><strong>运动一下</strong><span>动感节拍 · 找回活力</span></button>
+    </div>
+  </section>
+  <section class="home-section" aria-labelledby="discover-title"><div class="home-section-heading"><h2 id="discover-title">发现歌单</h2><button type="button" onclick="goToRecommend()">查看更多 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div><p class="section-caption">来自音乐平台的公开推荐</p>
+    <div class="discovery-rail" id="home-playlists" aria-busy="true"><div class="home-feed-state" role="status"><i class="fa-solid fa-record-vinyl" aria-hidden="true"></i><p>正在寻找好听的歌单…</p></div></div>
+  </section>
+  <section class="home-section home-recent" id="home-recent" aria-labelledby="recent-title"></section>
+  <div class="home-community"><button type="button" onclick="shareZhile()"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> 分享知乐</button><a href="https://github.com/isbenny/zhile/issues/new/choose" target="_blank" rel="noopener">反馈建议 <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a><a href="https://github.com/isbenny/zhile/releases" target="_blank" rel="noopener">更新日志</a></div>
+</main>
+{{end}}
+{{if .IsSearchLanding}}<section class="search-start" aria-labelledby="search-start-title"><h2 id="search-start-title">从喜欢的声音开始</h2><p>搜索歌名、歌手，或粘贴歌曲与歌单链接。</p><div><button type="button" onclick="discoverMood('华语经典','song')">华语经典</button><button type="button" onclick="discoverMood('轻音乐','song')">轻音乐</button><button type="button" onclick="discoverMood('爵士','song')">爵士</button><button type="button" onclick="discoverMood('民谣','song')">民谣</button></div></section>{{end}}
+{{end}}

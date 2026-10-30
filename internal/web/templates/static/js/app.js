@@ -1269,6 +1269,9 @@ function showToast(title, message = "", type = "info", duration = 0) {
     document.body.appendChild(container);
   }
 
+  const playerDialog = document.querySelector('#vg-modal[open]');
+  (playerDialog || document.body).appendChild(container);
+
   const toast = document.createElement("div");
   toast.className = `app-toast app-toast-${type}`;
   toast.innerHTML = [
@@ -1651,7 +1654,7 @@ function openSongActionSheet(card, trigger) {
     divider:action.matches(".btn-browser-download"), disabled:action.disabled,
     run:()=>{if(action.isConnected && !action.disabled) action.click();else showNotice("列表已更新，请重新打开菜单。");},
   }));
-  if (window.VideoGen) entries.push({label:"封面、歌词与视频",icon:"fa-solid fa-record-vinyl",divider:true,run:()=>window.VideoGen.open({id:card.dataset.id,source:card.dataset.source,name:card.dataset.name,artist:card.dataset.artist,album:card.dataset.album || "",cover:card.dataset.cover || "",duration:parseInt(card.dataset.duration)||0,extra:card.dataset.extra || ""})});
+  if (window.VideoGen) entries.push({label:"播放详情",icon:"fa-solid fa-record-vinyl",divider:true,run:()=>window.VideoGen.open({id:card.dataset.id,source:card.dataset.source,name:card.dataset.name,artist:card.dataset.artist,album:card.dataset.album || "",cover:card.dataset.cover || "",duration:parseInt(card.dataset.duration)||0,extra:card.dataset.extra || ""})});
   const cover = card.querySelector(".cover-wrapper img")?.currentSrc || card.dataset.cover || "";
   openActionSheet({title:card.dataset.name || "歌曲操作",subtitle:[card.dataset.artist,card.dataset.album].filter(Boolean).join(" · "),cover,entries,trigger});
 }
@@ -1869,6 +1872,7 @@ function formatSizeBytes(bytes) {
 }
 
 function initializePageContent(root = document) {
+  initializeDiscovery(root);
   resetAutoSwitchInvalidState();
   bindSourceSelectorButtons(root);
   initSourceSelectorCollapse(root);
@@ -2054,6 +2058,8 @@ async function navigateTo(url, options = {}) {
 
   const controller = new AbortController();
   navigationAbortController = controller;
+  document.getElementById("page-loading-status")?.removeAttribute("hidden");
+  document.body.classList.add("page-is-loading");
 
   try {
     const response = await fetch(targetURL.toString(), {
@@ -2129,6 +2135,8 @@ async function navigateTo(url, options = {}) {
   } finally {
     if (navigationAbortController === controller) {
       navigationAbortController = null;
+      document.getElementById("page-loading-status")?.setAttribute("hidden", "");
+      document.body.classList.remove("page-is-loading");
     }
   }
 }
@@ -6855,7 +6863,7 @@ try {
     order: "list",
     preload: "metadata",
     volume: 0.7,
-    listFolded: false,
+    listFolded: true,
     lrcType: 3,
     audio: [],
   });
@@ -6890,6 +6898,7 @@ let lastTaskbarPlaybackState = "";
 function syncPlayerTrackControls() {
   const player = document.querySelector(".aplayer.aplayer-fixed");
   const hasTracks = Boolean(ap?.list?.audios?.length);
+  document.body.classList.toggle("has-player-tracks", hasTracks);
   player?.classList.toggle("is-empty", !hasTracks);
   if (!player) return;
   if (!hasTracks && ap?.template?.title) ap.template.title.textContent = "尚未播放";
@@ -7202,42 +7211,29 @@ if (ap?.audio) {
   setTimeout(tryInject, 100);
 })();
 
+function openCurrentPlayerDetails() {
+  const audio = ap?.list?.audios?.[ap.list.index];
+  if (audio?.custom_id && window.VideoGen) window.VideoGen.open({
+    id:audio.custom_id,source:audio.source||'netease',name:audio.name,
+    artist:audio.artist,album:audio.album||'',cover:audio.cover,
+    duration:parseInt(audio.duration)||0,extra:audio.extra||'',
+  });
+}
 setTimeout(() => {
-  const apPic = document.querySelector(".aplayer-pic");
-  if (apPic) {
-    apPic.style.cursor = "pointer";
-    apPic.title = "点击打开详情/生成视频";
-
-    apPic.addEventListener(
-      "click",
-      (e) => {
-        if (
-          e.target.closest(".aplayer-button") ||
-          e.target.closest(".aplayer-play")
-        ) {
-          return;
-        }
-        e.stopPropagation();
-        e.preventDefault();
-
-        const idx = ap.list.index;
-        const audio = ap.list.audios[idx];
-
-        if (audio && audio.custom_id && window.VideoGen) {
-          window.VideoGen.open({
-            id: audio.custom_id,
-            source: audio.source || "netease",
-            name: audio.name,
-            artist: audio.artist,
-            album: audio.album || "",
-            cover: audio.cover,
-            duration: parseInt(audio.duration) || 0,
-            extra: audio.extra || "",
-          });
-        }
-      },
-      true,
-    );
+  const picture = document.querySelector('.aplayer-pic');
+  if (picture) {
+    picture.style.cursor='pointer';picture.title='打开播放详情';
+    picture.addEventListener('click', event => {
+      if(event.target.closest('.aplayer-button,.aplayer-play'))return;
+      event.stopPropagation();event.preventDefault();openCurrentPlayerDetails();
+    }, true);
+  }
+  const title = document.querySelector('.aplayer-music');
+  if(title){
+    title.setAttribute('role','button');title.setAttribute('tabindex','0');
+    title.setAttribute('aria-label','打开播放详情');title.style.cursor='pointer';
+    title.addEventListener('click',event=>{event.stopPropagation();openCurrentPlayerDetails();});
+    title.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openCurrentPlayerDetails();}});
   }
 }, 800);
 
@@ -7601,6 +7597,7 @@ function updateCardWithSong(card, song, options = {}) {
     sourceTag.textContent = isLocal ? "本地" : song.source;
     sourceTag.classList.toggle("tag-local", isLocal);
     sourceTag.classList.toggle("tag-src", !isLocal);
+    if (!isLocal) renderSourceIdentity(sourceTag, song.source);
   }
 
   const durationTag = card.querySelector(".tag-duration");
@@ -9556,4 +9553,147 @@ function toggleMobileUtilities(button) {
   const auth = toolbar?.querySelector("#auth-float-button");
   if (auth) entries.push({label:toolbar.querySelector("#auth-float-form")?.title || "登录", icon:"fa-solid fa-right-from-bracket", run:()=>auth.click(), divider:true});
   openActionSheet({title:"更多功能", subtitle:"知乐 Zhile", entries, trigger:button});
+}
+
+// Discovery, source identity and persistent navigation. No remote analytics.
+const ZHILE_SOURCES = Object.freeze({
+  netease:{name:'网易云音乐',icon:'netease.ico'}, qq:{name:'QQ音乐',icon:'qq.ico'},
+  kugou:{name:'酷狗音乐',icon:'kugou.ico'}, kuwo:{name:'酷我音乐',icon:'kuwo.ico'},
+  migu:{name:'咪咕音乐',icon:'migu.ico'}, soda:{name:'汽水音乐',icon:'soda.png'},
+  apple:{name:'Apple Music',icon:'apple.png'}, qianqian:{name:'千千音乐'},
+  bilibili:{name:'哔哩哔哩'}, jamendo:{name:'Jamendo'}, joox:{name:'JOOX'},
+  fivesing:{name:'5sing'}, local:{name:'本地音乐'}, 'local-file':{name:'本地音乐'}
+});
+
+function renderSourceIdentity(element, source) {
+  const identity = ZHILE_SOURCES[source];
+  if (!identity) return;
+  if (element.dataset.identity === source && element.querySelector('.source-identity-name')) return;
+  element.dataset.identity = source;
+  element.classList.add('source-identity');
+  element.replaceChildren();
+  if (identity.icon) {
+    const image = document.createElement('img');
+    image.src = `${API_ROOT}/images/sources/${identity.icon}`;
+    image.alt = ''; image.width = 16; image.height = 16;
+    image.addEventListener('error',()=>image.remove(),{once:true});
+    element.append(image);
+  } else {
+    const icon = document.createElement('i');
+    icon.className = source === 'local' ? 'fa-solid fa-folder-open' : 'fa-solid fa-music';
+    icon.setAttribute('aria-hidden','true'); element.append(icon);
+  }
+  const label = document.createElement('span'); label.className='source-identity-name';
+  label.textContent=identity.name; element.append(label);
+}
+
+function decorateSourceIdentities(root=document) {
+  root.querySelectorAll('.tag-src').forEach(tag=>{
+    const source=tag.closest('.song-card')?.dataset.source || tag.dataset.identity || tag.textContent.trim();
+    renderSourceIdentity(tag,source);
+  });
+  root.querySelectorAll('.source-option').forEach(option=>{
+    const name=option.querySelector('.source-name');
+    if(name)renderSourceIdentity(name,option.querySelector('input')?.value);
+  });
+}
+
+function discoverMood(query, type='playlist') {
+  const url=new URL(API_ROOT+'/search',location.origin);
+  url.searchParams.set('q',query);url.searchParams.set('type',type);url.searchParams.set('page','1');
+  const chosen=[...document.querySelectorAll('.source-checkbox:checked')].filter(el=>type!=='playlist'||el.dataset.playlistSupported==='true').map(el=>el.value);
+  (chosen.length?chosen:['netease','qq']).forEach(source=>url.searchParams.append('sources',source));
+  void navigateTo(url.toString(),{scrollToResults:true});
+}
+
+function syncMainNavigation() {
+  const path=location.pathname.replace(/\/$/,'');
+  const home=path===API_ROOT && new URLSearchParams(location.search).get('view')!=='search';
+  const library=/\/(my_collections|collection|local_music_page|user_playlists)$/.test(path);
+  const tab=home?'home':library?'library':'search';
+  document.querySelectorAll('[data-main-tab]').forEach(link=>{
+    if(link.dataset.mainTab===tab)link.setAttribute('aria-current','page');
+    else link.removeAttribute('aria-current');
+  });
+}
+
+function safeCoverURL(value) {
+  try { const u=new URL(value,location.origin);return ['https:','http:'].includes(u.protocol)?u.href:''; } catch(_){return '';}
+}
+
+let discoveryRequest;
+function initializeDiscovery(root=document) {
+  decorateSourceIdentities(root);syncMainNavigation();
+  discoveryRequest?.abort();
+  const home=root.querySelector('#discovery-home');
+  if(!home)return;
+  renderHomeRecent(home);
+  const rail=home.querySelector('#home-playlists');
+  const controller=new AbortController();discoveryRequest=controller;
+  const timeout=setTimeout(()=>controller.abort(),8000);
+  fetch(API_ROOT+'/home_feed',{signal:controller.signal})
+    .then(response=>{if(!response.ok)throw new Error('feed');return response.json();})
+    .then(data=>{
+      if(!rail.isConnected)return;
+      const playlists=Array.isArray(data.playlists)?data.playlists:[];
+      rail.replaceChildren();
+      playlists.slice(0,8).forEach(playlist=>{
+        let target;try{target=new URL(playlist.url,location.origin);}catch(_){return;}
+        if(target.origin!==location.origin||!isAppRoute(target.pathname))return;
+        const card=document.createElement('a');card.className='discovery-card';card.href=target.href;
+        const art=document.createElement('div');art.className='discovery-art';
+        const cover=safeCoverURL(playlist.cover);
+        const placeholder=document.createElement('i');placeholder.className='fa-solid fa-record-vinyl';placeholder.setAttribute('aria-hidden','true');art.append(placeholder);
+        if(cover){const image=document.createElement('img');image.src=cover;image.alt='';image.loading='lazy';image.addEventListener('error',()=>image.remove(),{once:true});art.append(image);}
+        const title=document.createElement('strong');title.textContent=playlist.name;
+        const source=document.createElement('span');renderSourceIdentity(source,playlist.source);
+        card.append(art,title,source);rail.append(card);
+      });
+      if(!rail.children.length)renderHomeFeedFallback(rail);
+    })
+    .catch(()=>{if(rail.isConnected)renderHomeFeedFallback(rail);})
+    .finally(()=>{clearTimeout(timeout);if(rail.isConnected)rail.setAttribute('aria-busy','false');});
+}
+
+function renderHomeFeedFallback(rail) {
+  rail.innerHTML='<div class="home-feed-state"><i class="fa-solid fa-headphones" aria-hidden="true"></i><div><strong>好音乐，不止一种找法</strong><p>推荐暂时没有加载出来，先从上面的心情或排行榜开始。</p><button type="button" onclick="goToTopLists()">看看排行榜 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button></div></div>';
+}
+
+function renderHomeRecent(root=document) {
+  const section=root.querySelector('#home-recent');if(!section)return;
+  const history=readPlaybackHistory().slice(0,4);
+  if(!history.length){
+    section.innerHTML='<div class="first-listen"><i class="fa-solid fa-music" aria-hidden="true"></i><div><h2>你的音乐，从这里开始</h2><p>听过的歌会留在这里，下次回来接着听。</p><a href="'+API_ROOT+'/?view=search">去找一首喜欢的歌 <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div></div>';
+    return;
+  }
+  section.innerHTML='<div class="home-section-heading"><h2 id="recent-title">继续聆听</h2><button type="button" onclick="openPlaybackHistoryModal()">查看全部</button></div><div class="home-recent-list"></div>';
+  const list=section.querySelector('.home-recent-list');
+  history.forEach(entry=>{
+    const button=document.createElement('button');button.className='home-recent-track';button.type='button';
+    const cover=safeCoverURL(entry.cover);
+    button.innerHTML=`<span class="recent-art">${cover?`<img src="${escapeHTML(cover)}" alt="" loading="lazy">`:'<i class="fa-solid fa-music" aria-hidden="true"></i>'}</span><span><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.artist||'未知歌手')}</small></span><i class="fa-solid fa-play" aria-hidden="true"></i>`;
+    button.querySelector('img')?.addEventListener('error',event=>event.target.remove(),{once:true});
+    button.setAttribute('aria-label','播放 '+entry.name);
+    button.addEventListener('click',()=>{activePlaybackHistoryEntries=readPlaybackHistory();const index=activePlaybackHistoryEntries.findIndex(item=>playbackHistoryKey(item)===playbackHistoryKey(entry));if(index>=0)playPlaybackHistoryItem(index);});
+    list.append(button);
+  });
+}
+
+async function shareZhile() {
+  const url='https://github.com/isbenny/zhile/releases/latest';
+  const text='知乐 Zhile：搜索、聆听，把喜欢的音乐收进自己的歌单。';
+  if(navigator.share){try{await navigator.share({title:'知乐 Zhile',text,url});return;}catch(error){if(error.name==='AbortError')return;}}
+  try{await navigator.clipboard.writeText(text+'\n'+url);showToast('分享链接已复制','粘贴给朋友，就能打开知乐下载页。','success');}
+  catch(_){await confirmAppAction({title:'分享知乐',message:text+'\n'+url,confirmLabel:'知道了'});}
+}
+
+function addCurrentTrackToCollection() {
+  const song=window.VideoGen?.data;if(!song?.id)return;
+  let extra={};try{extra=typeof song.extra==='string'?JSON.parse(song.extra||'{}'):(song.extra||{});}catch(_){}
+  if(!extra||typeof extra!=='object'||Array.isArray(extra))extra={};
+  pendingFavSong={id:song.id,source:song.source,name:song.name,artist:song.artist||'',duration:Number(song.duration)||0,cover:song.cover||'',extra:{...extra,saved_from:'web_ui'}};
+  pendingBatchFavIds=[];pendingBatchFavSongs=[];
+  window.VideoGen.close();
+  document.getElementById('addToCollectionModal').style.display='flex';
+  refreshAddToCollectionList();
 }

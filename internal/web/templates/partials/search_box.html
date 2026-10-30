@@ -1,13 +1,16 @@
 {{define "search_box"}}
-<div class="search-box">
+<div class="search-box {{if .IsHome}}home-search{{end}} {{if .IsLocalColPage}}library-search{{end}}">
     <header class="music-header">
-        <h1><a href="https://github.com/isbenny/zhile" target="_blank" rel="noopener"><img src="{{.Root}}/icon.png" alt="" width="36" height="36" style="vertical-align:middle;border-radius:9px"> 知乐</a></h1>
+        <h1><a href="{{.Root}}/" aria-label="知乐首页"><img src="{{.Root}}/icon.png" alt="" width="36" height="36" style="vertical-align:middle;border-radius:9px"> 知乐</a></h1>
+        <nav class="desktop-app-nav" aria-label="主导航"><a href="{{.Root}}/" data-main-tab="home">首页</a><a href="{{.Root}}/?view=search" data-main-tab="search">搜索</a><a href="{{.Root}}/my_collections" data-main-tab="library">我的音乐</a></nav>
         <div class="mobile-header-actions">
             <button type="button" onclick="openSystemConfig()" aria-label="系统配置"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
             <button type="button" onclick="openDownloadRecordsModal()" aria-label="下载管理"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
             <button type="button" onclick="toggleMobileUtilities(this)" aria-label="更多功能" aria-controls="utility-toolbar" aria-expanded="false"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
         </div>
     </header>
+    {{if .IsHome}}<div class="home-greeting"><h2>今天，想听点什么？</h2><p>从一首歌，找到今天的心情。</p></div>{{end}}
+    {{if .IsLocalColPage}}<div class="home-greeting"><h2>我的音乐</h2><p>喜欢的旋律，慢慢收集。</p></div><div class="library-shortcuts"><button onclick="openLocalMusicPage()"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> 本地音乐</button><button onclick="openPlaybackHistoryModal()"><i class="fa-regular fa-clock" aria-hidden="true"></i> 最近播放</button><button onclick="goToUserPlaylists()"><i class="fa-solid fa-cloud" aria-hidden="true"></i> 平台歌单</button></div>{{end}}
     <form action="{{.Root}}/search" method="get" id="search-form">
         <input type="hidden" name="page" value="1">
         <input type="hidden" name="page_size" id="page-size-hidden" value="{{.PageSize}}">

@@ -1225,7 +1225,16 @@
         if(this.localAudio) { this.localAudio.pause(); this.localAudio.removeAttribute('src'); this.localAudio.load(); }
 
         const modal = document.getElementById("vg-modal");
-        this.updateVisuals(songData.cover || "https://via.placeholder.com/600", false);
+        this.updateVisuals(songData.cover || window.API_ROOT + "/icon.png", false);
+        const source = document.getElementById('vg-source');
+        source.textContent = '';
+        renderSourceIdentity(source, songData.source);
+        document.getElementById('vg-tools-panel').hidden = true;
+        document.getElementById('vg-lyrics').hidden = true;
+        const lyricToggle = document.querySelector('.vg-lyrics-toggle');
+        lyricToggle.setAttribute('aria-expanded','false');
+        lyricToggle.querySelector('small').textContent = '展开查看歌词';
+        document.getElementById('vg-cover-img').onerror = function(){this.onerror=null;this.src=window.API_ROOT+'/icon.png';};
         document.getElementById("vg-title").textContent = songData.name;
         document.getElementById("vg-artist").textContent = songData.artist;
 
@@ -1237,7 +1246,11 @@
         this.setPlaybackRate(this.playbackRate);
         
         const sb = document.getElementById('vg-seek-bar');
+        sb.value = 0;
+        document.getElementById('vg-time-current').textContent = '00:00';
+        document.getElementById('vg-time-total').textContent = this.formatTime(Number(songData.duration)||0);
         sb.style.setProperty('--vg-progress', '0%');
+        this.syncLyrics();
         sb.oninput = (e) => {
             this.isDraggingProgress = true;
             e.target.style.setProperty('--vg-progress', `${Number(e.target.value) || 0}%`);
@@ -1281,7 +1294,7 @@
             if (this.isLocalAudio && this.localAudio) {
                 initialVol = this.localAudio.volume;
             } else if (window.ap && window.ap.audio) {
-                initialVol = window.ap.audio.volume || initialVol;
+                initialVol = window.ap.audio.volume;
             }
             vb.value = initialVol * 100;
             const vt = document.getElementById('vg-vol-text'); if (vt) vt.textContent = Math.round(initialVol * 100) + '%';
@@ -1291,19 +1304,31 @@
 
         this.reset(); 
         
-        fetch(buildVideoGenLyricURL(songData))
-            .then(r => r.text())
-            .then(text => this.parseAndSetLyrics(text));
+        this.lyricController?.abort();
+        const lyricController = new AbortController(); this.lyricController = lyricController;
+        const lyricTimeout = setTimeout(() => {
+          lyricController.abort();
+          if(this.lyricController===lyricController)document.getElementById('vg-lyrics').textContent='歌词加载超时，收起后重新打开可重试。';
+        }, 8000);
+        document.getElementById('vg-lyrics').textContent = '正在加载歌词…';
+        fetch(buildVideoGenLyricURL(songData), {signal:lyricController.signal})
+            .then(r => {if(!r.ok)throw new Error('lyrics');return r.text();})
+            .then(text => {if(this.lyricController===lyricController)this.parseAndSetLyrics(text);})
+            .catch(error => {if(error.name!=='AbortError' && this.lyricController===lyricController)document.getElementById('vg-lyrics').textContent='歌词暂不可用，仍可继续聆听。';})
+            .finally(()=>clearTimeout(lyricTimeout));
 
         modal.style.display = "flex";
+        if (!modal.open) modal.showModal();
+        modal.scrollTop = 0;
         document.body.classList.add("vg-open");
         requestAnimationFrame(() => { 
-            modal.classList.add("active"); this.initRealtimeCanvas(); 
+            modal.classList.add("active");
             if (this.isPlaying) this.apPlayHandler(); 
         });
       },
 
       close: function () {
+        this.lyricController?.abort();
         this.stopRealtimeVisualizer();
         this.stopLyricsLoop();
         this.detachEvents(this._currentAudioEl);
@@ -1311,7 +1336,26 @@
         if (this.resizeObserver) { this.resizeObserver.disconnect(); this.resizeObserver = null; }
         const m = document.getElementById("vg-modal"); m.classList.remove("active");
         document.body.classList.remove("vg-open");
-        setTimeout(() => { m.style.display = "none"; this.reset(); }, 500);
+        m.close(); m.style.display = "none"; this.reset();
+      },
+
+      toggleLyrics: function(button) {
+        const box=document.getElementById('vg-lyrics');box.hidden=!box.hidden;
+        button.setAttribute('aria-expanded',String(!box.hidden));
+        button.querySelector('small').textContent=box.hidden?'展开查看歌词':'收起歌词';
+        if(!box.hidden)this.syncLyrics();
+      },
+      openQueue: function() {
+        this.close();
+        if(window.ap?.list?.audios?.length)window.ap.list.show();
+        else showNotice('播放一首歌曲后，播放列表会显示在这里。');
+      },
+      openMore: function(trigger) {
+        openActionSheet({title:this.data?.name||'播放选项',subtitle:'知乐 · 歌曲操作',cover:this.data?.cover,trigger,entries:[
+          {label:'添加到歌单',icon:'fa-solid fa-circle-plus',run:()=>addCurrentTrackToCollection()},
+          {label:'播放列表',icon:'fa-solid fa-list-ul',run:()=>this.openQueue()},
+          {label:'音频与视频工具',icon:'fa-solid fa-sliders',divider:true,run:()=>{const tools=document.getElementById('vg-tools-panel');tools.hidden=false;tools.scrollIntoView({behavior:'auto',block:'center'});}},
+        ]});
       },
 
       reset: function () {
@@ -1441,6 +1485,7 @@
           }
       },
       startRealtimeVisualizer: function() {
+          if (!this.rtCanvas || !this.rtCtx) return;
           if (!this.initAudioContext() || !this.connectAudioSource() || !this.analyser) return;
           const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
           const animate = () => {
@@ -1524,6 +1569,7 @@
 
             updatePlayUI: function () {
                 const i = document.getElementById("vg-play-toggle-icon"), m = document.getElementById("vg-modal");
+                document.getElementById('vg-play-button')?.setAttribute('aria-label',this.isPlaying?'暂停':'播放');
                 if (i) i.className = this.isPlaying ? "fa-solid fa-pause" : "fa-solid fa-play";
                 if (m) this.isPlaying ? m.classList.add("playing") : m.classList.remove("playing");
             },
@@ -1544,7 +1590,7 @@
             document.getElementById('vg-time-total').textContent = this.formatTime(dur); 
         }
         
-        if (this.lyricTimes.length === 0 || this.isUserScrolling) return;
+        if (document.getElementById('vg-lyrics').hidden || this.lyricTimes.length === 0 || this.isUserScrolling) return;
         let active = -1; for (let i = 0; i < this.lyricTimes.length; i++) { if (ct >= this.lyricTimes[i].time) active = i; else break; }
         if (active === -1) return;
 

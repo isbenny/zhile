@@ -1,0 +1,9 @@
+这些图标取自各音乐平台公开官网的 favicon，仅用于标明曲目/歌单来源；相关商标及图标版权归各权利人所有，不表示合作或背书。
+获取日期：2026-10-30
+netease.ico: https://s1.music.126.net/style/favicon.ico?v20180823
+qq.ico: https://y.qq.com/favicon.ico?max_age=2592000
+kugou.ico: https://www.kugou.com/root/favicon.ico
+kuwo.ico: https://www.kuwo.cn/favicon.ico?v=1
+migu.ico: https://h5.nf.migu.cn/app/favicon.ico
+soda.png: https://lf-luna.qishui.com/obj/music-luna-fe/luna/home/1.0.0.287/favicon.png
+apple.png: https://music.apple.com/assets/favicon/favicon-32.png

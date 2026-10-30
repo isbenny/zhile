@@ -2,10 +2,11 @@
 """Package tracked source + dependency sources and a self-hosted Zhile download site.
 Run with Python 3 and Go 1.27 from a clean checkout after placing APKs in --output.
 """
-import argparse, hashlib, json, os, shutil, subprocess, tempfile, urllib.request, zipfile
+import argparse, hashlib, json, os, shutil, subprocess, tempfile, urllib.request, zipfile, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION = re.search(r'AppVersion = "([^"]+)"', (ROOT / 'core/version.go').read_text()).group(1)
 FFMPEG_URL = 'https://ffmpeg.org/releases/ffmpeg-8.0.1.tar.xz'
 FFMPEG_SHA = '05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41'
 
@@ -63,7 +64,7 @@ def source_bundle(output):
                 raise RuntimeError('FFmpeg source checksum mismatch')
             z.write(archive, 'zhile/dependency-sources/ffmpeg-8.0.1.tar.xz')
         z.writestr('zhile/dependency-sources/manifest.json', json.dumps(records, ensure_ascii=False, indent=2))
-        z.writestr('zhile/SOURCE-REVISION.txt', f'Zhile v0.1.0\nRepository: https://github.com/isbenny/zhile\nCommit: {revision}\nFFmpeg source: {FFMPEG_URL}\nSHA256: {FFMPEG_SHA}\n')
+        z.writestr('zhile/SOURCE-REVISION.txt', f'Zhile v{VERSION}\nRepository: https://github.com/isbenny/zhile\nCommit: {revision}\nFFmpeg source: {FFMPEG_URL}\nSHA256: {FFMPEG_SHA}\n')
     print(f'Source bundle: {target.name}; {len(records)} pinned dependency source archives.', flush=True)
 
 def site_bundle(output):
@@ -81,8 +82,8 @@ def site_bundle(output):
     for name in assets + ['SHA256SUMS.txt']:
         shutil.copyfile(output / name, site / 'downloads' / name)
     index = site / 'index.html'
-    index.write_text(index.read_text().replace('https://github.com/isbenny/zhile/releases/download/v0.1.0/', 'downloads/'))
-    instructions = '''知乐 Zhile v0.1.0 — 服务器上传说明
+    index.write_text(index.read_text().replace(f'https://github.com/isbenny/zhile/releases/download/v{VERSION}/', 'downloads/'))
+    instructions = f'''知乐 Zhile v{VERSION} — 服务器上传说明
 
 把 website 文件夹里的所有内容整体上传到网站目录，保留 assets 和 downloads 的相对位置。
 例如：网站根目录/index.html、assets/、downloads/、LICENSE.txt、NOTICE.txt。

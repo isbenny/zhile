@@ -1,0 +1,16 @@
+name: 功能与体验建议
+description: 告诉我们什么可以更好
+title: '[建议] '
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 你希望解决什么问题？
+      description: 描述一个具体使用场景，比单列功能名称更有帮助。
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你的想法
+      description: 可附参考图，不要包含个人隐私。

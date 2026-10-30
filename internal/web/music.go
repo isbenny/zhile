@@ -642,8 +642,11 @@ func inspectResolutionFailure(err error) gin.H {
 func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 
 	api.GET("/", func(c *gin.Context) {
+		c.Set("IsHome", c.Query("view") != "search")
+		c.Set("IsSearchLanding", c.Query("view") == "search")
 		renderIndex(c, nil, nil, "", nil, "", "song", "", "", "", false, "", nil)
 	})
+	api.GET("/home_feed", serveHomeFeed)
 
 	api.GET("/recommend", func(c *gin.Context) {
 		sources := filterAvailableSources(c.QueryArray("sources"), core.GetRecommendSourceNames())

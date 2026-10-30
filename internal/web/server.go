@@ -463,6 +463,8 @@ func renderIndex(c *gin.Context, songs []model.Song, playlists []model.Playlist,
 		pageStartDisplay = pageStart + 1
 	}
 	c.HTML(200, "index.html", gin.H{
+		"IsHome":                  c.GetBool("IsHome"),
+		"IsSearchLanding":         c.GetBool("IsSearchLanding"),
 		"Result":                  songs,
 		"Playlists":               playlists,
 		"Page":                    page,
@@ -600,6 +602,11 @@ func StartWithOptions(port string, opts StartOptions) {
 	api.GET("/videogen.css", func(c *gin.Context) { c.FileFromFS("templates/static/css/videogen.css", http.FS(templateFS)) })
 	api.GET("/videogen.js", func(c *gin.Context) { c.FileFromFS("templates/static/js/videogen.js", http.FS(templateFS)) })
 	api.GET("/app.js", func(c *gin.Context) { c.FileFromFS("templates/static/js/app.js", http.FS(templateFS)) })
+	imageAssets, err := fs.Sub(templateFS, "templates/static/images")
+	if err != nil {
+		panic(err)
+	}
+	api.StaticFS("/images", http.FS(imageAssets))
 	vendorAssets, err := embeddedVendorFS()
 	if err != nil {
 		panic(fmt.Sprintf("load embedded vendor assets: %v", err))

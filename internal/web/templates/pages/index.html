@@ -49,6 +49,8 @@
 <div class="container">
     {{template "search_box" .}}
 
+    {{template "home" .}}
+
     {{template "playlist_categories" .}}
 
     {{template "toplists" .}}
@@ -65,6 +67,8 @@
 {{template "modals" .}}
 
 <div id="aplayer"></div>
+<div class="page-loading-status" id="page-loading-status" role="status" aria-live="polite" hidden>正在加载音乐…</div>
+<nav class="bottom-nav" aria-label="底部导航"><a href="{{.Root}}/" data-main-tab="home"><i class="fa-solid fa-house" aria-hidden="true"></i><span>首页</span></a><a href="{{.Root}}/?view=search" data-main-tab="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span>搜索</span></a><a href="{{.Root}}/my_collections" data-main-tab="library"><i class="fa-solid fa-lines-leaning" aria-hidden="true"></i><span>我的音乐</span></a></nav>
 <script src="{{.Root}}/vendor/aplayer/APlayer.min.js"></script>
 
 <script>

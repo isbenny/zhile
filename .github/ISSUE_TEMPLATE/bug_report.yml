@@ -1,0 +1,28 @@
+name: 播放或安装问题
+description: 帮助我们定位你遇到的问题
+title: '[问题] '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 发生了什么？
+      description: 请说明操作步骤、期望效果和实际结果。不要填写账号密码、Cookie 或个人隐私。
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 设备与版本
+      placeholder: 知乐版本 / 手机型号 / Android 或浏览器版本
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: 音乐来源
+      placeholder: 如果是播放问题，请填写音源及公开歌曲名称
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图或补充说明
+      description: 上传前请遮住个人信息。

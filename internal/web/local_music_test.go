@@ -100,6 +100,11 @@ func TestSearchBoxTemplateShowsLocalMusicEntryNextToCollections(t *testing.T) {
 	}
 
 	html := string(content)
+	// Compare entries within the search shortcuts; library navigation has its own local entry.
+	_, html, found := strings.Cut(html, `<div class="quick-actions">`)
+	if !found {
+		t.Fatal("search shortcuts missing")
+	}
 	if !strings.Contains(html, `onclick="openCollectionManager()"`) {
 		t.Fatal("search box missing custom collection entry")
 	}
