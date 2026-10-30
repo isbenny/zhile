@@ -141,6 +141,7 @@ jobs:
       - name: Build APK
         shell: cmd
         env:
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_HOME }}\ndk\27.0.12077973
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.BENNY_ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEYSTORE_FILE: ..\release.keystore
           MUSIC_DL_BUNDLE_ANDROID_FFMPEG: "1"

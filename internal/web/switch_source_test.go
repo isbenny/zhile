@@ -64,7 +64,7 @@ func TestAppJSAutoSwitchInvalidSources(t *testing.T) {
 		`prepareInspectRetry(card, retryDelay)`,
 		"async function batchSwitchSource(options = {})",
 		"!options.skipConfirm &&",
-		"!confirm(",
+		"!(await confirmNotice(",
 		"clearSongCardSelection(card, { deferToolbar: !!options.deferToolbar })",
 		"options.cards.filter((card) => card && card.isConnected)",
 		"if (!shouldCheck && options.clearExisting !== false)",

@@ -105,8 +105,8 @@ func TestWebSettingsDefaultAndPersist(t *testing.T) {
 	if defaults.WebDAVDir != DefaultWebDAVDir {
 		t.Fatalf("default WebDAVDir mismatch: got %q want %q", defaults.WebDAVDir, DefaultWebDAVDir)
 	}
-	if defaults.DisableFloatingLyrics {
-		t.Fatalf("default DisableFloatingLyrics should be false")
+	if !defaults.DisableFloatingLyrics {
+		t.Fatalf("default DisableFloatingLyrics should be true")
 	}
 	if defaults.WebPageSize != DefaultWebPageSize {
 		t.Fatalf("default WebPageSize mismatch: got %d want %d", defaults.WebPageSize, DefaultWebPageSize)

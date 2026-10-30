@@ -210,7 +210,7 @@ func defaultWebSettings() WebSettings {
 		DownloadToLocal:          false,
 		DownloadDir:              DefaultWebDownloadDir,
 		DownloadFilenameTemplate: DefaultDownloadFilenameTemplate,
-		DisableFloatingLyrics:    false,
+		DisableFloatingLyrics:    true,
 		WebPageSize:              DefaultWebPageSize,
 		CliPageSize:              DefaultCLIPageSize,
 		DownloadConcurrency:      DefaultWebConcurrency,

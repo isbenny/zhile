@@ -274,6 +274,7 @@ func compileAndroid(tmpDir string, tools *androidTools, bi *buildInfo) (err erro
 			sourcePath += string(os.PathListSeparator) + customJavaRoot
 		}
 		javacArgs := []string{
+			"-encoding", "UTF-8",
 			"-target", "1.8",
 			"-source", "1.8",
 			"-sourcepath", sourcePath,

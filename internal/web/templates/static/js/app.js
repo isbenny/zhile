@@ -1,7 +1,7 @@
 // templates/app.js
 
 const API_ROOT = window.API_ROOT;
-const WEB_SETTINGS_KEY = "musicdl:web_settings";
+const WEB_SETTINGS_KEY = "zhile:web_settings";
 const INSPECT_REQUEST_DELAY_MS = 20;
 const INSPECT_MAX_CONCURRENCY = 50;
 const INSPECT_SOURCE_MAX_CONCURRENCY = 32;
@@ -66,7 +66,7 @@ let webSettings = {
   webdavUsername: "",
   webdavPassword: "",
   webdavDir: "music-dl",
-  disableFloatingLyrics: false,
+  disableFloatingLyrics: true,
   webPageSize: DEFAULT_WEB_PAGE_SIZE,
   cliPageSize: DEFAULT_CLI_PAGE_SIZE,
   autoCheckUpdate: true,
@@ -108,7 +108,7 @@ function normalizeWebSettings(raw) {
     webdavUsername: "",
     webdavPassword: "",
     webdavDir: "music-dl",
-    disableFloatingLyrics: false,
+    disableFloatingLyrics: true,
     webPageSize: DEFAULT_WEB_PAGE_SIZE,
     cliPageSize: DEFAULT_CLI_PAGE_SIZE,
     autoCheckUpdate: true,
@@ -1278,7 +1278,10 @@ function showToast(title, message = "", type = "info", duration = 0) {
       ? `<div class="app-toast-message">${escapeHTML(message)}</div>`
       : "",
   ].join("");
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
   container.appendChild(toast);
+  while (container.children.length > 2) container.firstElementChild.remove();
 
   const close = (immediate = false) => {
     if (!toast.isConnected) return;
@@ -1533,9 +1536,13 @@ function bindSongCardCovers(root = document) {
     if (!coverWrap) return;
 
     coverWrap.style.cursor = "pointer";
-    coverWrap.title = "点击生成视频";
+    coverWrap.title = songActionFoldMedia.matches ? "播放歌曲" : "点击生成视频";
     coverWrap.onclick = (e) => {
       e.stopPropagation();
+      if (songActionFoldMedia.matches) {
+        card.querySelector(".btn-play")?.click();
+        return;
+      }
       if (window.VideoGen) {
         const img = coverWrap.querySelector("img");
         const currentCover = img ? img.src : card.dataset.cover || "";
@@ -1552,7 +1559,7 @@ function bindSongCardCovers(root = document) {
         });
       } else {
         console.error("VideoGen library not loaded.");
-        alert("视频生成组件加载失败，请刷新页面重试");
+        showNotice("视频生成组件加载失败，请刷新页面重试");
       }
     };
   });
@@ -1569,9 +1576,103 @@ if (typeof songActionFoldMedia.addEventListener === "function") {
   songActionFoldMedia.addListener(refreshSongActionFolds);
 }
 
+let activeActionSheet = null;
+
+function openActionSheet({title, subtitle = "", cover = "", entries, trigger}) {
+  activeActionSheet?.close();
+  const dialog = document.createElement("dialog");
+  dialog.className = "action-sheet";
+  dialog.id = "mobile-action-sheet";
+  dialog.setAttribute("aria-labelledby", "action-sheet-title");
+  dialog.innerHTML = `<div class="sheet-handle" aria-hidden="true"></div>
+    <header class="sheet-heading"><div class="sheet-art" aria-hidden="true"></div>
+      <div class="sheet-heading-text"><h2 id="action-sheet-title"></h2><p></p></div>
+      <button type="button" class="sheet-close" aria-label="关闭菜单" autofocus><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></header>
+    <div class="sheet-entries"></div>`;
+  dialog.querySelector("h2").textContent = title;
+  dialog.querySelector(".sheet-heading-text p").textContent = subtitle;
+  const art = dialog.querySelector(".sheet-art");
+  if (cover) {
+    const img = document.createElement("img"); img.src = cover; img.alt = "";
+    img.addEventListener("error",()=>{art.textContent="♪";},{once:true});art.appendChild(img);
+  } else { art.innerHTML = '<i class="fa-solid fa-music"></i>'; }
+  const oldOverflow = document.body.style.overflow;
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return; cleaned = true;
+    document.body.style.overflow = oldOverflow;
+    trigger?.setAttribute("aria-expanded", "false");
+    if (activeActionSheet === dialog) activeActionSheet = null;
+    dialog.remove();
+  };
+  const close = () => { dialog.close(); cleanup(); };
+  const list = dialog.querySelector(".sheet-entries");
+  entries.forEach(entry => {
+    const button = document.createElement("button"); button.type = "button";
+    button.className = "sheet-action" + (entry.danger ? " is-danger" : "") + (entry.divider ? " has-divider" : "");
+    button.disabled = !!entry.disabled;
+    const icon = document.createElement("i"); icon.className = entry.icon || "fa-solid fa-circle"; icon.setAttribute("aria-hidden","true");
+    const label = document.createElement("span"); label.textContent = entry.label;
+    button.append(icon,label);
+    button.addEventListener("click",()=>{close();entry.run();});
+    list.appendChild(button);
+  });
+  dialog.querySelector(".sheet-close").addEventListener("click",close);
+  dialog.addEventListener("click",event=>{
+    if(event.target !== dialog) return;
+    const rect=dialog.getBoundingClientRect();
+    if(event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom) close();
+  });
+  dialog.addEventListener("close",cleanup,{once:true});
+  document.body.appendChild(dialog);
+  document.body.style.overflow = "hidden";
+  trigger?.setAttribute("aria-expanded","true");
+  trigger?.setAttribute("aria-controls",dialog.id);
+  activeActionSheet = dialog;
+  dialog.showModal();
+}
+
+function openSongActionSheet(card, trigger) {
+  const actions = Array.from(card.querySelectorAll(".mobile-more-actions > button, .mobile-more-actions > a"))
+    .filter(el=>!el.hidden && getComputedStyle(el).display !== "none");
+  const actionOrder = [".btn-fav", ".btn-download", ".btn-switch", ".btn-browser-download", ".btn-lyric"];
+  const rank = action => { const index = actionOrder.findIndex(selector=>action.matches(selector)); return index < 0 ? actionOrder.length : index; };
+  actions.sort((a,b)=>rank(a)-rank(b));
+  const labelFor = action => {
+    if(action.matches(".btn-download")) return "保存到音乐目录";
+    if(action.matches(".btn-browser-download")) return "浏览器另存为";
+    if(action.matches(".btn-switch")) return "切换音源";
+    if(action.matches(".btn-fav") && !/移出|取消/.test(action.title)) return "添加到歌单";
+    return action.title || action.getAttribute("aria-label") || action.textContent.trim();
+  };
+  const entries = actions.map(action=>({
+    label:labelFor(action), icon:action.querySelector("i")?.className,
+    danger:/删除|移出|取消收藏/.test(action.title),
+    divider:action.matches(".btn-browser-download"), disabled:action.disabled,
+    run:()=>{if(action.isConnected && !action.disabled) action.click();else showNotice("列表已更新，请重新打开菜单。");},
+  }));
+  if (window.VideoGen) entries.push({label:"封面、歌词与视频",icon:"fa-solid fa-record-vinyl",divider:true,run:()=>window.VideoGen.open({id:card.dataset.id,source:card.dataset.source,name:card.dataset.name,artist:card.dataset.artist,album:card.dataset.album || "",cover:card.dataset.cover || "",duration:parseInt(card.dataset.duration)||0,extra:card.dataset.extra || ""})});
+  const cover = card.querySelector(".cover-wrapper img")?.currentSrc || card.dataset.cover || "";
+  openActionSheet({title:card.dataset.name || "歌曲操作",subtitle:[card.dataset.artist,card.dataset.album].filter(Boolean).join(" · "),cover,entries,trigger});
+}
+
+songActionFoldMedia.addEventListener?.("change",()=>activeActionSheet?.close());
+
+function showNotice(message) {
+  const text=String(message || "");
+  const failed=/失败|错误|加载不了/.test(text);
+  showToast(failed?"操作未完成":"知乐提示",text,failed?"error":"info",6500);
+}
+
+function confirmNotice(message) {
+  const destructive=/删除|清空|移出|取消收藏/.test(String(message));
+  return confirmAppAction({title:destructive?"确认操作":"继续操作？",message:String(message),confirmLabel:/删除/.test(message)?"删除":/清空/.test(message)?"清空":/移出/.test(message)?"移出":/取消收藏/.test(message)?"取消收藏":"继续",destructive});
+}
+
 function ensureSongActionFold(card) {
   const actions = card?.querySelector(".actions");
   if (!actions) return;
+  actions.querySelectorAll("i").forEach(icon=>icon.setAttribute("aria-hidden","true"));
 
   let moreActions = actions.querySelector(".mobile-more-actions");
   if (!moreActions) {
@@ -1581,7 +1682,7 @@ function ensureSongActionFold(card) {
   }
 
   Array.from(actions.children).forEach((action) => {
-    if (action.matches(".btn-dl:not(.btn-download), .btn-switch, .btn-fav")) {
+    if (action.matches("button:not(.btn-play):not(.mobile-more-toggle), a")) {
       moreActions.appendChild(action);
     }
   });
@@ -1594,14 +1695,12 @@ function ensureSongActionFold(card) {
     toggle.title = "更多操作";
     toggle.setAttribute("aria-label", "更多操作");
     toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-haspopup", "dialog");
     toggle.innerHTML =
       '<i class="fa-solid fa-ellipsis" aria-hidden="true"></i>';
     toggle.addEventListener("click", (event) => {
       event.stopPropagation();
-      const expanded = !moreActions.classList.contains("is-open");
-      moreActions.classList.toggle("is-open", expanded);
-      toggle.setAttribute("aria-expanded", String(expanded));
-      toggle.classList.toggle("is-open", expanded);
+      openSongActionSheet(card, toggle);
     });
     actions.appendChild(toggle);
   }
@@ -2805,7 +2904,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             } else {
                 console.error("VideoGen library not loaded.");
-                alert("视频生成组件加载失败，请刷新页面重试");
+                showNotice("视频生成组件加载失败，请刷新页面重试");
             }
         };
     });
@@ -3616,7 +3715,7 @@ function showDuplicateModal(groups, loading, pagination = {}) {
         delBtn.className = "btn-pill btn-pill-danger";
         delBtn.innerHTML = '<i class="fa-solid fa-trash"></i> 删除';
         delBtn.onclick = async () => {
-          if (!confirm(`确定删除 "${s.name}"?`)) return;
+          if (!(await confirmNotice(`确定删除 "${s.name}"?`))) return;
           const originalHTML = delBtn.innerHTML;
           delBtn.disabled = true;
           delBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
@@ -3626,7 +3725,7 @@ function showDuplicateModal(groups, loading, pagination = {}) {
             await refreshLocalMusicPageAfterMutation();
             await checkDuplicateSongs(activeDuplicatePage);
           } catch (error) {
-            alert(error.message || "删除失败");
+            showNotice(error.message || "删除失败");
           } finally {
             if (delBtn.isConnected) {
               delBtn.innerHTML = originalHTML;
@@ -5225,7 +5324,7 @@ function closeDownloadRecordsModal() {
 }
 
 async function clearDownloadRecords() {
-  if (!confirm("确定清空所有下载记录？此操作不可撤销。")) return;
+  if (!(await confirmNotice("确定清空所有下载记录？此操作不可撤销。"))) return;
 
   try {
     const resp = await fetch(`${API_ROOT}/api/downloads/records`, { method: "DELETE" });
@@ -5238,7 +5337,7 @@ async function clearDownloadRecords() {
     if (paginationEl) paginationEl.innerHTML = "";
     activeDownloadRecordsPage = 1;
   } catch (err) {
-    alert("清空失败: " + err.message);
+    showNotice("清空失败: " + err.message);
   }
 }
 
@@ -5383,8 +5482,8 @@ function closePlaybackHistoryModal() {
   if (modal) modal.style.display = "none";
 }
 
-function clearPlaybackHistory() {
-  if (!confirm("确定清空播放历史？")) return;
+async function clearPlaybackHistory() {
+  if (!(await confirmNotice("确定清空播放历史？"))) return;
   try {
     localStorage.removeItem(PLAYBACK_HISTORY_STORAGE_KEY);
   } catch (_) {}
@@ -5664,7 +5763,7 @@ async function saveCookies() {
     });
   } catch (error) {
     setShortcutCaptureStatus(error.message, true);
-    alert(error.message || "快捷键设置无效");
+    showNotice(error.message || "快捷键设置无效");
     return;
   }
 
@@ -5716,10 +5815,10 @@ async function saveCookies() {
       await refreshCurrentPageContent({ scroll: false });
     }
     setAuthFloatLoggedIn(true);
-    alert("保存成功");
+    showNotice("保存成功");
     document.getElementById("cookieModal").style.display = "none";
   } catch (error) {
-    alert(error.message || "保存失败，请稍后重试");
+    showNotice(error.message || "保存失败，请稍后重试");
   }
 }
 
@@ -7671,7 +7770,7 @@ function switchSource(btn, options = {}) {
     })
     .catch(() => {
       if (!options.silent) {
-        alert("换源失败，请稍后重试");
+        showNotice("换源失败，请稍后重试");
       }
       return false;
     })
@@ -7887,7 +7986,7 @@ function selectInvalidSongCards(options = {}) {
     : getManualInvalidSongCards();
   if (invalidCards.length === 0) {
     if (!options.silent) {
-      alert("当前列表中没有检测到无效歌曲");
+      showNotice("当前列表中没有检测到无效歌曲");
     }
     return 0;
   }
@@ -7913,7 +8012,7 @@ function selectInvalidSongCards(options = {}) {
 
   updateBatchToolbar();
   if (!options.silent && changed === 0) {
-    alert("无效歌曲已全部选中");
+    showNotice("无效歌曲已全部选中");
   }
   return invalidCards.length;
 }
@@ -8293,7 +8392,7 @@ async function deleteLocalMusic(trackId) {
   return payload;
 }
 
-function confirmLocalMusicDeletion(songs) {
+async function confirmLocalMusicDeletion(songs) {
   const items = Array.isArray(songs) ? songs : [];
   if (items.length === 0) return false;
 
@@ -8304,13 +8403,13 @@ function confirmLocalMusicDeletion(songs) {
       ? `《${formatBatchSongLabel(items[0])}》`
       : `${items.length} 首本地音乐`;
   if (
-    !confirm(
+    !(await confirmNotice(
       `准备删除 ${scope}。\n删除后文件会从本地下载目录移除，且不可恢复。\n\n${names}${more}`,
-    )
+    ))
   ) {
     return false;
   }
-  return confirm(`再次确认：确定永久删除 ${scope} 吗？`);
+  return (await confirmNotice(`再次确认：确定永久删除 ${scope} 吗？`));
 }
 
 function stopDeletedLocalMusicPlayback(deletedIds) {
@@ -8330,7 +8429,7 @@ async function deleteLocalMusicFromButton(btn) {
   const card = btn?.closest(".song-card");
   const song = songFromCard(card);
   if (!song || !isLocalMusicSourceValue(song.source)) return;
-  if (!confirmLocalMusicDeletion([song])) return;
+  if (!(await confirmLocalMusicDeletion([song]))) return;
 
   const originalHTML = btn.innerHTML;
   btn.disabled = true;
@@ -8341,7 +8440,7 @@ async function deleteLocalMusicFromButton(btn) {
     stopDeletedLocalMusicPlayback(new Set([song.id]));
     await refreshLocalMusicPageAfterMutation();
   } catch (error) {
-    alert(error.message || "删除失败");
+    showNotice(error.message || "删除失败");
   } finally {
     if (btn.isConnected) {
       btn.innerHTML = originalHTML;
@@ -8356,7 +8455,7 @@ async function batchDeleteLocalMusic() {
   );
   if (songs.length === 0) return;
 
-  if (!confirmLocalMusicDeletion(songs)) {
+  if (!(await confirmLocalMusicDeletion(songs))) {
     return;
   }
 
@@ -8390,7 +8489,7 @@ async function batchDeleteLocalMusic() {
 
     let message = `批量删除完成，成功 ${success}/${songs.length}`;
     message += buildBatchFailureMessage(failures, "失败");
-    alert(message);
+    showNotice(message);
     await refreshLocalMusicPageAfterMutation();
   } finally {
     if (batchDelete) {
@@ -8419,7 +8518,7 @@ async function batchSwitchSource(options = {}) {
   const skippedLocalCount = candidateCards.length - cards.length;
   if (cards.length === 0) {
     if (!options.silent) {
-      alert("选中的歌曲都是本地歌曲，无需批量换源。");
+      showNotice("选中的歌曲都是本地歌曲，无需批量换源。");
     }
     return false;
   }
@@ -8428,9 +8527,9 @@ async function batchSwitchSource(options = {}) {
     skippedLocalCount > 0 ? `\n已跳过 ${skippedLocalCount} 首本地歌曲。` : "";
   if (
     !options.skipConfirm &&
-    !confirm(
+    !(await confirmNotice(
       `准备对 ${cards.length} 首歌曲进行自动换源。\n这可能需要一些时间，请耐心等待。${skipText}`,
-    )
+    ))
   ) {
     return false;
   }
@@ -8473,7 +8572,7 @@ async function batchRemoveFromCollection(colId) {
   const songs = getSelectedSongs();
   if (!id || songs.length === 0) return;
 
-  if (!confirm(`确定从当前自建歌单中取消收藏 ${songs.length} 首歌曲吗？`)) {
+  if (!(await confirmNotice(`确定从当前自建歌单中取消收藏 ${songs.length} 首歌曲吗？`))) {
     return;
   }
 
@@ -8499,10 +8598,10 @@ async function batchRemoveFromCollection(colId) {
     if (!response.ok || !payload || payload.error) {
       throw new Error((payload && payload.error) || "批量取消收藏失败");
     }
-    alert(`已从当前歌单取消收藏 ${songs.length} 首歌曲。`);
+    showNotice(`已从当前歌单取消收藏 ${songs.length} 首歌曲。`);
     await refreshCurrentPageContent({ scroll: false });
   } catch (error) {
-    alert(error.message || "批量取消收藏失败");
+    showNotice(error.message || "批量取消收藏失败");
   } finally {
     if (btn && btn.isConnected) {
       btn.innerHTML = originalHTML;
@@ -8784,7 +8883,7 @@ async function addLocalMusicToCollection(trackId, btn) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-plus"></i> 添加';
     }
-    alert(error.message || "添加失败");
+    showNotice(error.message || "添加失败");
   }
 }
 
@@ -8793,7 +8892,7 @@ function playAllSongs() {
   if (firstPlayBtn) {
     playAllAndJumpTo(firstPlayBtn);
   } else {
-    alert("列表为空，无法播放");
+    showNotice("列表为空，无法播放");
   }
 }
 
@@ -8803,7 +8902,7 @@ let pendingBatchFavSongs = [];
 function batchAddToCollection() {
   const songs = getSelectedSongs();
   if (songs.length === 0) {
-    alert("请先选择歌曲");
+    showNotice("请先选择歌曲");
     return;
   }
   pendingBatchFavSongs = songs
@@ -8845,9 +8944,9 @@ async function submitBatchAddToCollection(colId) {
     let message = `批量收藏完成：新增 ${payload.added || 0}`;
     if (payload.duplicate) message += `，已存在 ${payload.duplicate}`;
     if (payload.failed) message += `，失败 ${payload.failed}`;
-    alert(message);
+    showNotice(message);
   } catch (error) {
-    alert(error.message || "批量收藏失败");
+    showNotice(error.message || "批量收藏失败");
   }
 }
 
@@ -8856,7 +8955,7 @@ function batchAddLocalMusicToCollection() {
     isLocalMusicSourceValue(song.source),
   );
   if (songs.length === 0) {
-    alert("请先选择本地音乐");
+    showNotice("请先选择本地音乐");
     return;
   }
   pendingBatchFavIds = songs.map((song) => song.id).filter(Boolean);
@@ -8888,10 +8987,10 @@ async function submitBatchAddLocalMusicToCollection(colId) {
     let message = `批量收藏完成：新增 ${payload.added || 0}`;
     if (payload.duplicate) message += `，已存在 ${payload.duplicate}`;
     if (payload.failed) message += `，失败 ${payload.failed}`;
-    alert(message);
+    showNotice(message);
     await refreshCurrentPageContent({ scroll: false });
   } catch (error) {
-    alert(error.message || "批量收藏失败");
+    showNotice(error.message || "批量收藏失败");
   }
 }
 
@@ -8937,7 +9036,7 @@ function saveCollection() {
   const desc = document.getElementById("editColDesc").value.trim();
   const cover = document.getElementById("editColCover").value.trim();
 
-  if (!name) return alert("名称不能为空");
+  if (!name) return showNotice("名称不能为空");
 
   const payload = { name, description: desc, cover };
   const isAddingSongModalOpen =
@@ -8953,7 +9052,7 @@ function saveCollection() {
   })
     .then((r) => r.json())
     .then((res) => {
-      if (res.error) return alert(res.error);
+      if (res.error) return showNotice(res.error);
 
       document.getElementById("editCollectionModal").style.display = "none";
 
@@ -9017,7 +9116,7 @@ function importCollectionFromButton(btn) {
   };
 
   if (!payload.source || !payload.external_id) {
-    alert("缺少导入参数");
+    showNotice("缺少导入参数");
     return;
   }
 
@@ -9034,12 +9133,12 @@ function importCollectionFromButton(btn) {
       if (res.error) {
         btn.disabled = false;
         btn.style.opacity = "";
-        alert(res.error);
+        showNotice(res.error);
         return;
       }
 
       setImportCollectionButtonState(btn, true);
-      alert(
+      showNotice(
         res.duplicate
           ? "该歌单/专辑已在本地列表中"
           : "导入成功，已加入本地歌单列表",
@@ -9048,7 +9147,7 @@ function importCollectionFromButton(btn) {
     .catch(() => {
       btn.disabled = false;
       btn.style.opacity = "";
-      alert("导入失败，请稍后重试");
+      showNotice("导入失败，请稍后重试");
     });
 }
 
@@ -9190,23 +9289,23 @@ function addSongToCollection(colId) {
     .then((r) => r.json())
     .then((res) => {
       if (res.error) {
-        alert(res.error);
+        showNotice(res.error);
       } else {
-        alert("成功收藏至您的歌单！");
+        showNotice("成功收藏至您的歌单！");
         document.getElementById("addToCollectionModal").style.display = "none";
       }
     });
 }
 
-function removeSongFromCollection(btn, colId, originalSongId, originalSource) {
-  if (!confirm("确定将此歌曲移出当前歌单吗？")) return;
+async function removeSongFromCollection(btn, colId, originalSongId, originalSource) {
+  if (!(await confirmNotice("确定将此歌曲移出当前歌单吗？"))) return;
   fetch(
     `${API_ROOT}/collections/${colId}/songs?id=${encodeURIComponent(originalSongId)}&source=${encodeURIComponent(originalSource)}`,
     { method: "DELETE" },
   )
     .then((r) => r.json())
     .then((res) => {
-      if (res.error) return alert(res.error);
+      if (res.error) return showNotice(res.error);
       const card = btn.closest(".song-card");
       if (card) {
         card.style.transition = "all 0.3s";
@@ -9443,15 +9542,18 @@ async function removePlaybackQueueTrack(index) {
   catch (error) { reportPlaybackSessionError(error); }
 }
 
-// Mobile utility disclosure keeps secondary actions available without obscuring songs.
+// Mobile utility actions share the accessible bottom-sheet surface.
 function toggleMobileUtilities(button) {
+  if (!songActionFoldMedia.matches) return;
   const toolbar = document.getElementById("utility-toolbar");
-  if (!toolbar) return;
-  const expanded = toolbar.classList.toggle("mobile-open");
-  button.setAttribute("aria-expanded", String(expanded));
+  const entries = [
+    {label:"本地音乐", icon:"fa-solid fa-folder-open", run:openLocalMusicPage},
+    {label:"播放历史", icon:"fa-solid fa-clock", run:openPlaybackHistoryModal},
+    {label:"下载管理", icon:"fa-solid fa-download", run:openDownloadRecordsModal},
+    {label:"设置", icon:"fa-solid fa-gear", run:openSystemConfig},
+    {label:"关于知乐", icon:"fa-solid fa-circle-info", run:openAboutAppModal},
+  ];
+  const auth = toolbar?.querySelector("#auth-float-button");
+  if (auth) entries.push({label:toolbar.querySelector("#auth-float-form")?.title || "登录", icon:"fa-solid fa-right-from-bracket", run:()=>auth.click(), divider:true});
+  openActionSheet({title:"更多功能", subtitle:"知乐 Zhile", entries, trigger:button});
 }
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape") return;
-  document.getElementById("utility-toolbar")?.classList.remove("mobile-open");
-  document.querySelector('[aria-controls="utility-toolbar"]')?.setAttribute("aria-expanded", "false");
-});
