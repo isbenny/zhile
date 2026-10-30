@@ -179,6 +179,8 @@ jobs:
       - name: Verify app identity and rename release assets
         shell: powershell
         run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $OutputEncoding = [System.Text.Encoding]::UTF8
           $aapt = "$env:ANDROID_HOME\build-tools\34.0.0\aapt.exe"
           $info = & $aapt dump badging music-dl_arm64-v8a.apk
           $info | Select-String "package:|application-label:|sdkVersion:"

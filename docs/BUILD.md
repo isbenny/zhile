@@ -45,6 +45,10 @@ FFmpeg 源码来自 https://ffmpeg.org/releases/ffmpeg-8.0.1.tar.xz；构建脚�
 支持常见音频元数据写入；不包含 x264/libmp3lame 等外部编码器，因此部分视频生成/转码功能不可用。
 FFmpeg 适用 LGPL-2.1-or-later，原许可证保留在源码中。前端第三方许可证在 `internal/web/templates/static/vendor/licenses/`；Go 模块各自的许可证保留在源码归档中。
 
+## 打包发行
+
+把三种 APK 放到一个输出目录，运行 `python3 scripts/package_release.py --output /absolute/output`。脚本会下载并校验依赖源码、生成校验清单、把网页下载链接改为本地相对路径，打包 `zhile-website.zip`。请在干净且已经提交的工作区中运行，源码归档只包含 Git 已跟踪文件。
+
 ## 自己的服务器
 
 将发布包 `zhile-website.zip` 解压，把里面的文件整体上传到网站目录即可。

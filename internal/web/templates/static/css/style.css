@@ -2742,3 +2742,9 @@ body:not(.tv-ui) .aplayer.aplayer-fixed .aplayer-pic { background-color: #282828
 .brand-notice{padding:24px 20px 145px;text-align:center;color:#a7a7a7;font-size:12px;line-height:2}.brand-notice a{color:#b3b3b3;text-decoration:underline}.brand-notice a:hover{color:#1ed760}
 
 .brand-notice button{border:0;background:none;font:inherit;color:#b3b3b3;text-decoration:underline;cursor:pointer;padding:8px}.app-update-summary a{color:#1ed760;text-decoration:underline}
+
+/* Keep automatic source-switch notifications legible in the dark theme. */
+body:not(.tv-ui) .app-toast{background:#242424;color:#fff;border:1px solid #424242;box-shadow:0 10px 30px #0008}
+body:not(.tv-ui) .app-toast-title{color:#fff}body:not(.tv-ui) .app-toast-message{color:#b3b3b3}
+body:not(.tv-ui) .app-toast-close{color:#b3b3b3;background:#333}body:not(.tv-ui) .app-toast-close:hover{color:#fff;background:#444}
+body:not(.tv-ui) .app-toast-success{border-left:3px solid #1ed760}body:not(.tv-ui) .app-toast-warning{border-left:3px solid #e6b85c}body:not(.tv-ui) .app-toast-error{border-left:3px solid #ed7b85}

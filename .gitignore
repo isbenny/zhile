@@ -37,3 +37,6 @@ tmp/
 /build/
 !/website/dist/
 !/website/dist/**
+
+__pycache__/
+*.pyc
