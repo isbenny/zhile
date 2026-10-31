@@ -2972,9 +2972,9 @@ function toggleSearchType(type) {
   const checkboxes = document.querySelectorAll(".source-checkbox");
   const searchInput = document.getElementById("search-keyword");
   const placeholders = {
-    song: "搜索歌曲、歌手，或直接粘贴分享链接",
-    playlist: "搜索歌单、创建者，或直接粘贴歌单链接",
-    album: "搜索专辑、歌手，或直接粘贴专辑链接",
+    song: "搜索歌曲、歌手或粘贴链接",
+    playlist: "搜索歌单或粘贴链接",
+    album: "搜索专辑、歌手或粘贴链接",
   };
 
   if (searchInput && placeholders[type]) {

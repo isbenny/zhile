@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script>
+    // iOS uses this limit for automatic input-focus zoom. Apply before first paint.
+    // Other browsers retain their default pinch-zoom behavior.
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        document.querySelector('meta[name="viewport"]').content =
+            'width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover';
+    }
+    </script>
     <meta name="referrer" content="no-referrer">
     <title>知乐 · 音乐随身</title>
     <link rel="icon" href="{{.Root}}/icon.png" type="image/png">
@@ -13,7 +22,7 @@
     <meta name="apple-mobile-web-app-title" content="知乐">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <link rel="stylesheet" href="{{.Root}}/style.css">
+    <link rel="stylesheet" href="{{.Root}}/style.css?v=20261031-search-stable-2">
     <link rel="stylesheet" href="{{.Root}}/videogen.css">
     
     <link rel="stylesheet" href="{{.Root}}/vendor/aplayer/APlayer.min.css">
@@ -86,7 +95,7 @@
     window.sakanaInstance = null;
 </script>
 
-<script src="{{.Root}}/app.js"></script>
+<script src="{{.Root}}/app.js?v=20261031-search-stable-2"></script>
 {{template "videogen_modal" .}}
 <script src="{{.Root}}/videogen.js"></script>
 

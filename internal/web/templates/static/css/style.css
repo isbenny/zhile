@@ -2962,3 +2962,38 @@ body:not(.tv-ui) .aplayer .playback-queue-toolbar{background:#202020;padding:14p
 
 /* Keep editable search text at iOS's non-zooming size on every search surface. */
 body:not(.tv-ui) #search-keyword { font-size: 16px; line-height: 1.5; -webkit-appearance: none; appearance: none; }
+
+/* Keep the search entry at a stable width when the iOS keyboard opens. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body:not(.tv-ui) #search-form .input-group {
+    display: block; position: relative; width: 100%; min-width: 0;
+    box-sizing: border-box; margin-bottom: 16px;
+}
+body:not(.tv-ui) #search-form #search-keyword {
+    display: block; width: 100%; max-width: 100%; min-width: 0;
+    height: 56px; min-height: 56px; margin: 0;
+    padding: 0 62px 0 18px; border: 2px solid transparent;
+    border-radius: 12px !important; background: #f4f4f4 !important;
+    color: #171717 !important; font: 400 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+    -webkit-appearance: none; appearance: none; transition: border-color .15s;
+    box-shadow: none; outline: none; box-sizing: border-box;
+}
+body:not(.tv-ui) #search-form #search-keyword::placeholder { color: #666; opacity: 1; }
+body:not(.tv-ui) #search-form #search-keyword:focus { border-color: #1ed760; box-shadow: none; outline: none; }
+body:not(.tv-ui) #search-keyword::-webkit-search-decoration,
+body:not(.tv-ui) #search-keyword::-webkit-search-cancel-button { -webkit-appearance: none; }
+body:not(.tv-ui) #search-form .search-btn {
+    position: absolute; top: 6px; right: 6px; width: 44px; height: 44px;
+    min-height: 44px; padding: 0; margin: 0; border-radius: 9px;
+    display: grid; place-items: center; font-size: 18px; transform: none;
+}
+body:not(.tv-ui) #search-form .search-btn:hover { transform: none; }
+@media(max-width:768px) {
+    body:not(.tv-ui) .search-landing-search .music-header { margin-bottom: 16px; }
+    .search-heading { margin: 12px 0 16px; }
+    .search-heading p { display: none; }
+    body:not(.tv-ui) .search-type-switch { flex-wrap: nowrap; gap: 8px; }
+    body:not(.tv-ui) .search-type-switch .type-option { flex: 1 1 0; min-width: 0; }
+    body:not(.tv-ui) .search-type-switch .type-option span { font-size: 13px; padding: 8px 4px; }
+}
