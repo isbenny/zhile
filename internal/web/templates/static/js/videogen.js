@@ -1428,6 +1428,12 @@
       },
 
       prepareAudioRouting: function(options = {}) {
+          // Keep iOS playback on the native HTMLMediaElement path. Connecting an
+          // element to Web Audio is irreversible for its lifetime, and a suspended
+          // background AudioContext would silence it even while audio.paused=false.
+          const nativePlayback = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          if (nativePlayback) return false;
           if (!window.ap || !window.ap.audio) return false;
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           if (!AudioContextClass) return false;

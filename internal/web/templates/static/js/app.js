@@ -6913,6 +6913,7 @@ try {
 }
 
 window.ap = ap;
+configureAudioPlaybackSession();
 // Keep the player available as a full-width mobile transport bar.
 const mobilePlayerViewport = window.matchMedia("(max-width: 768px)");
 function expandMobilePlayer() {
@@ -6921,7 +6922,19 @@ function expandMobilePlayer() {
 expandMobilePlayer();
 mobilePlayerViewport.addEventListener("change", expandMobilePlayer);
 
+function configureAudioPlaybackSession() {
+  // Let supported browsers classify this as music playback (including lock screen).
+  // Do not force play on visibility changes: calls, other apps and manual pause
+  // must retain control of the audio session.
+  try {
+    if (navigator.audioSession && navigator.audioSession.type !== "playback") {
+      navigator.audioSession.type = "playback";
+    }
+  } catch (_) {}
+}
+
 function resumeVideoGenAudioRouting() {
+  configureAudioPlaybackSession();
   const videoGen = window.VideoGen;
   if (videoGen && typeof videoGen.resumeAudioRouting === "function") {
     videoGen.resumeAudioRouting();
