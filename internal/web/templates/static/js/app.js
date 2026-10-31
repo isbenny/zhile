@@ -1499,6 +1499,18 @@ function bindSearchForm(root = document) {
   const searchForm = root.querySelector("#search-form");
   if (!searchForm) return;
 
+  const searchInput = searchForm.querySelector("#search-keyword");
+  if (searchInput) {
+    // Route the iOS keyboard action through the same validated AJAX submission
+    // as the visible button. Enter used to confirm Chinese text must not search.
+    searchInput.onkeydown = (event) => {
+      if (event.key !== "Enter" || event.isComposing || event.keyCode === 229) return;
+      event.preventDefault();
+      if (event.repeat || searchForm.dataset.loading === "1") return;
+      searchForm.requestSubmit(searchForm.querySelector(".search-btn"));
+    };
+  }
+
   searchForm.onsubmit = async (event) => {
     event.preventDefault();
     if (searchForm.dataset.loading === "1") return;
@@ -1526,6 +1538,10 @@ function bindSearchForm(root = document) {
       params.append(key, String(value));
     });
     targetURL.search = params.toString();
+
+    // Dismiss the software keyboard before rendering/scrolling to the results.
+    // Do not change viewport scale: pinch-to-zoom remains available.
+    if (document.activeElement === searchInput) searchInput.blur();
 
     try {
       await navigateTo(targetURL.toString(), { scrollToResults: true });

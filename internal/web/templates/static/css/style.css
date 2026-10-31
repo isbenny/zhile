@@ -73,11 +73,13 @@ h1 {
 
 .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
 input[type="text"],
+input[type="search"],
 input[type="password"] {
     flex: 1; padding: 14px 24px; border: 2px solid #e2e8f0; border-radius: 50px;
     font-size: 16px; outline: none; transition: all 0.3s; background: #f8fafc; min-width: 0;
 }
 input[type="text"]:focus,
+input[type="search"]:focus,
 input[type="password"]:focus { border-color: #10b981; background: #fff; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
 
 .search-btn {
@@ -206,6 +208,7 @@ body.tv-ui .input-group {
 }
 
 body.tv-ui input[type="text"],
+body.tv-ui input[type="search"],
 body.tv-ui input[type="password"] {
     min-height: 54px;
     font-size: clamp(16px, 1.25vw, 19px);
@@ -433,6 +436,7 @@ body.tv-ui .vg-overlay :focus-visible {
     }
 
     body.tv-ui input[type="text"],
+body.tv-ui input[type="search"],
     body.tv-ui input[type="password"] {
         min-height: 46px;
         padding-top: 10px;
@@ -2685,7 +2689,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--primary-color);
 body:not(.tv-ui) :is(.modal, .utility-modal, .settings-modal, .auth-card, .category-panel, .category-current-bar, .playlist-tabs-panel, .playlist-card, .toplist-card, .song-list-tools-popover, .local-music-item, .playback-history-item) { background: #1e1e1e; color: #fff; border-color: #303030; box-shadow: 0 12px 36px #0003; }
 body:not(.tv-ui) :is(.modal-header, .modal-body, .modal-footer, .settings-header, .settings-body, .settings-footer, .settings-sidebar, .utility-modal-toolbar, .download-records-toolbar, .setting-item, .category-source-tabs) { background: #1e1e1e; color: #fff; border-color: #303030; }
 body:not(.tv-ui) :is(.modal h2, .modal h3, .modal label, .utility-modal h2, .setting-toggle, .settings-tab, .setting-item label, .auth-card h1, .auth-field span, .toplist-title, .song-list-tools-heading, .song-list-tool-field) { color: #fff; -webkit-text-fill-color: currentColor; }
-body:not(.tv-ui) :is(input[type="text"], input[type="password"], input[type="number"], textarea, select) { background: #242424; color: #fff; border-color: #535353; }
+body:not(.tv-ui) :is(input[type="text"], input[type="search"], input[type="password"], input[type="number"], textarea, select) { background: #242424; color: #fff; border-color: #535353; }
 body:not(.tv-ui) :is(input, textarea)::placeholder { color: #a7a7a7; }
 body:not(.tv-ui) :is(.ctrl-btn, .category-chip, .category-source-tab, .song-list-tools-trigger, .song-list-tool-action, .song-list-sort-direction, .col-action-btn, .local-music-upload-button.is-folder, .page-btn) { background: #282828; color: #eee; border-color: #3c3c3c; box-shadow: none; }
 body:not(.tv-ui) :is(.category-chip.is-hot, .category-source-tab.is-active, .settings-tab.is-active) { background: #193525; color: #1ed760; }
@@ -2880,7 +2884,7 @@ body:not(.tv-ui) .home-search{margin-bottom:18px;padding-bottom:0}.home-search .
 .discovery-home button:focus-visible,.discovery-home a:focus-visible,.bottom-nav a:focus-visible,.desktop-app-nav a:focus-visible{outline:2px solid #1ed760;outline-offset:4px}.discovery-home button:hover{filter:brightness(1.1)}
 @media(max-width:768px){
  .desktop-app-nav{display:none}.home-greeting{margin:14px 0 21px}.home-greeting h2{font-size:28px;letter-spacing:-.8px}.home-greeting p{font-size:13px}
- body:not(.tv-ui) .home-search .music-header{margin-bottom:24px}.home-search .input-group input{font-size:14px;height:50px}.home-shortcuts{gap:10px}.home-shortcuts>button{padding:12px;gap:10px;min-height:54px;font-size:13px}.home-shortcuts>button>i:first-child{font-size:20px}
+ body:not(.tv-ui) .home-search .music-header{margin-bottom:24px}.home-search .input-group input{font-size:16px;height:50px}.home-shortcuts{gap:10px}.home-shortcuts>button{padding:12px;gap:10px;min-height:54px;font-size:13px}.home-shortcuts>button>i:first-child{font-size:20px}
  .home-section{margin-top:28px}.home-section-heading{margin-bottom:14px}.home-section-heading h2,.search-start h2{font-size:21px}.mood-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mood-tile{min-height:116px;padding:15px}.mood-tile i{font-size:22px;margin-bottom:13px}.mood-tile strong{font-size:17px}.mood-tile span{font-size:10px}
  .discovery-rail{gap:14px;margin-right:-16px;padding-right:16px}.discovery-card{width:144px;min-width:144px}.discovery-card strong{font-size:13px;min-height:40px}.home-recent-list{grid-template-columns:1fr}.home-feed-state{padding:20px;min-height:130px;font-size:12px}.home-feed-state>i{font-size:26px}.home-feed-state strong{font-size:14px}.first-listen{padding:18px;gap:14px}.first-listen h2{font-size:16px}.first-listen p{font-size:11px}.first-listen>i{width:44px;height:44px;flex-basis:44px;font-size:22px}.library-shortcuts{flex-wrap:wrap;gap:8px}.library-shortcuts button{font-size:12px;padding:10px 14px}
  body:not(.tv-ui){padding-bottom:calc(88px + env(safe-area-inset-bottom))!important}body:not(.tv-ui).has-player-tracks{padding-bottom:calc(160px + env(safe-area-inset-bottom))!important}
@@ -2955,3 +2959,6 @@ body:not(.tv-ui) .aplayer .playback-queue-toolbar{background:#202020;padding:14p
 .member-account [onclick*="batchDownload"],.member-account [onclick*="runBatchDownload"]{display:none!important}
 
 .member-account .btn-browser-download{display:none!important}
+
+/* Keep editable search text at iOS's non-zooming size on every search surface. */
+body:not(.tv-ui) #search-keyword { font-size: 16px; line-height: 1.5; -webkit-appearance: none; appearance: none; }
