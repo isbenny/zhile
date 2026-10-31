@@ -502,7 +502,7 @@ func localCollectionSearchPlaylists(keyword string) []model.Playlist {
 	}
 	like := "%" + keyword + "%"
 	var collections []Collection
-	if err := db.Where("name LIKE ? OR description LIKE ? OR creator LIKE ?", like, like, like).
+	if err := db.Where("owner_id = 0").Where("name LIKE ? OR description LIKE ? OR creator LIKE ?", like, like, like).
 		Order("id DESC").
 		Find(&collections).Error; err != nil {
 		return nil

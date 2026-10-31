@@ -372,6 +372,15 @@ func filterSongsForDisplay(songs []model.Song, settings core.WebSettings) []mode
 
 func renderIndex(c *gin.Context, songs []model.Song, playlists []model.Playlist, q string, selected []string, errMsg string, searchType string, playlistLink string, colID string, colName string, isLocalColPage bool, collectionKind string, importCollection *importCollectionMeta) {
 	allSrc := core.GetAllSourceNames()
+	if isMember(c) {
+		remoteSources := make([]string, 0, len(allSrc))
+		for _, source := range allSrc {
+			if !isLocalMusicSource(source) {
+				remoteSources = append(remoteSources, source)
+			}
+		}
+		allSrc = remoteSources
+	}
 	if c.GetBool("PublicLocalOnly") {
 		allSrc = []string{"local"}
 		selected = []string{"local"}
@@ -492,6 +501,9 @@ func renderIndex(c *gin.Context, songs []model.Song, playlists []model.Playlist,
 		pageStartDisplay = pageStart + 1
 	}
 	c.HTML(200, "index.html", gin.H{
+		"PrivateMode":             c.GetBool("PrivateMode"),
+		"Member":                  isMember(c),
+		"AccountStorageKey":       accountStorageKey(c),
 		"PublicLocalOnly":         c.GetBool("PublicLocalOnly"),
 		"MediaLocalOnly":          publicLocalOnly,
 		"LikedCount":              c.GetInt("LikedCount"),
@@ -772,8 +784,15 @@ func embeddedVendorFS() (fs.FS, error) {
 func bindAuthMiddleware(api *gin.RouterGroup, opts StartOptions) *gin.RouterGroup {
 	bindAuthRoutes(api)
 	if opts.RequireAuthForAll {
-		api.Use(authRequired(core.GetWebAuthSettings))
-		return api
+		api.Use(authRequired(core.GetWebAuthSettings), memberAccessGuard())
+		bindAccountRoutes(api)
+		configAPI := api.Group("")
+		configAPI.Use(func(c *gin.Context) {
+			if !c.GetBool("AuthAdmin") {
+				c.AbortWithStatus(403)
+			}
+		})
+		return configAPI
 	}
 	if opts.DisableAuth {
 		return api

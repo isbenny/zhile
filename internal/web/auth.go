@@ -268,8 +268,7 @@ func authRequired(provider authSettingsProvider) gin.HandlerFunc {
 		}
 
 		value, err := c.Cookie(authCookieName)
-		if err == nil && validateSessionValue(settings, value, time.Now()) {
-			c.Set("AuthUsername", settings.Username)
+		if err == nil && authenticateAccount(c, settings, value) {
 			c.Next()
 			return
 		}
@@ -294,6 +293,12 @@ func renderAuthPage(c *gin.Context, mode string, errMsg string, username string)
 		button = "创建账号"
 	}
 
+	if mode == "register" {
+		title = "受邀加入知乐"
+		action = RoutePrefix + "/register"
+		button = "创建我的账号"
+	}
+	c.Header("Cache-Control", "no-store")
 	c.HTML(http.StatusOK, "auth.html", gin.H{
 		"Root":        RoutePrefix,
 		"Title":       title,
@@ -308,6 +313,7 @@ func renderAuthPage(c *gin.Context, mode string, errMsg string, username string)
 }
 
 func bindAuthRoutes(api *gin.RouterGroup) {
+	bindRegistrationRoutes(api)
 	api.GET("/setup", func(c *gin.Context) {
 		settings, err := core.GetWebAuthSettings()
 		if err != nil {
@@ -393,7 +399,7 @@ func bindAuthRoutes(api *gin.RouterGroup) {
 			c.Redirect(http.StatusFound, RoutePrefix+"/setup")
 			return
 		}
-		if value, err := c.Cookie(authCookieName); err == nil && validateSessionValue(settings, value, time.Now()) {
+		if value, err := c.Cookie(authCookieName); err == nil && authenticateAccount(c, settings, value) {
 			c.Redirect(http.StatusFound, safeAuthRedirectTarget(c.Query("next")))
 			return
 		}
@@ -401,6 +407,11 @@ func bindAuthRoutes(api *gin.RouterGroup) {
 	})
 
 	api.POST("/login", func(c *gin.Context) {
+		if !formSameOrigin(c) {
+			c.Status(403)
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8192)
 		settings, err := core.GetWebAuthSettings()
 		if err != nil {
 			renderAuthPage(c, "login", "读取登录配置失败", "")
@@ -419,6 +430,11 @@ func bindAuthRoutes(api *gin.RouterGroup) {
 			wait := int(time.Until(lockedUntil).Seconds()) + 1
 			renderAuthPage(c, "login", fmt.Sprintf("登录失败次数过多，请 %d 秒后重试", wait), username)
 			return
+		}
+		if c.GetBool("PrivateMode") && !strings.EqualFold(username, settings.Username) {
+			if member, err := memberAccount(username); err == nil {
+				settings = member.auth()
+			}
 		}
 		if !strings.EqualFold(username, settings.Username) ||
 			bcrypt.CompareHashAndPassword([]byte(settings.PasswordHash), []byte(password)) != nil {

@@ -2947,3 +2947,11 @@ body:not(.tv-ui) .aplayer .playback-queue-toolbar{background:#202020;padding:14p
   .browse-shortcut-icon { font-size: 18px; }
   .browse-shortcut-arrow { font-size: 10px; }
 }
+
+/* Shared-server members only see their own music features. Server enforcement
+   lives in memberAccessGuard; these selectors keep unavailable actions out of UI. */
+.member-account [onclick*="openSystemConfig"],.member-account [onclick*="openDownloadRecordsModal"],.member-account [onclick*="openLocalMusicPage"],.member-account [onclick*="goToUserPlaylists"],.member-account [data-source="local"],.member-account .source-option:has(input[value="local"]),.member-account [onclick*="downloadEntire"],.member-account [onclick*="downloadContainer"],.member-account [onclick*="downloadWholeCollection"]{display:none!important}
+
+.member-account [onclick*="batchDownload"],.member-account [onclick*="runBatchDownload"]{display:none!important}
+
+.member-account .btn-browser-download{display:none!important}

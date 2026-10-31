@@ -1,3 +1,10 @@
+// Namespace browser data by account; existing administrator data keeps its keys.
+const accountStorageSuffix = window.ZHILE_STORAGE_SUFFIX || "";
+const accountLocalStorage = {
+ getItem: key => localStorage.getItem(key + accountStorageSuffix),
+ setItem: (key, value) => localStorage.setItem(key + accountStorageSuffix, value),
+ removeItem: key => localStorage.removeItem(key + accountStorageSuffix),
+};
 // templates/app.js
 
 const API_ROOT = window.API_ROOT;
@@ -56,8 +63,8 @@ function isLocalMusicSourceValue(source) {
 }
 
 let webSettings = {
-  embedDownload: true,
-  downloadToLocal: true,
+  embedDownload: !window.ZHILE_MEMBER,
+  downloadToLocal: !window.ZHILE_MEMBER,
   downloadDir: "data/downloads",
   downloadFilenameTemplate: "{name} - {artist}",
   downloadTipDuration: DEFAULT_DOWNLOAD_TIP_DURATION,
@@ -69,7 +76,7 @@ let webSettings = {
   disableFloatingLyrics: true,
   webPageSize: DEFAULT_WEB_PAGE_SIZE,
   cliPageSize: DEFAULT_CLI_PAGE_SIZE,
-  autoCheckUpdate: true,
+  autoCheckUpdate: !window.ZHILE_MEMBER,
   autoSwitchInvalidSources: true,
   autoCacheOnPlay: false,
   filterVersionKeywords: false,
@@ -98,8 +105,8 @@ let webSettings = {
 
 function normalizeWebSettings(raw) {
   const next = {
-    embedDownload: true,
-    downloadToLocal: true,
+    embedDownload: !window.ZHILE_MEMBER,
+    downloadToLocal: !window.ZHILE_MEMBER,
     downloadDir: "data/downloads",
     downloadFilenameTemplate: "{name} - {artist}",
     downloadTipDuration: DEFAULT_DOWNLOAD_TIP_DURATION,
@@ -111,7 +118,7 @@ function normalizeWebSettings(raw) {
     disableFloatingLyrics: true,
     webPageSize: DEFAULT_WEB_PAGE_SIZE,
     cliPageSize: DEFAULT_CLI_PAGE_SIZE,
-    autoCheckUpdate: true,
+    autoCheckUpdate: !window.ZHILE_MEMBER,
     autoSwitchInvalidSources: true,
     autoCacheOnPlay: false,
     filterVersionKeywords: false,
@@ -271,12 +278,13 @@ function normalizeWebSettings(raw) {
   if (Number.isInteger(raw.lyricFontSize)) {
     next.lyricFontSize = Math.max(14, Math.min(48, raw.lyricFontSize));
   }
-  return next;
+  if (window.ZHILE_MEMBER) Object.assign(next,{downloadToLocal:false,embedDownload:false,autoCacheOnPlay:false,autoCheckUpdate:false,webdavEnabled:false});
+ return next;
 }
 
 function loadWebSettingsFromCache() {
   try {
-    const raw = localStorage.getItem(WEB_SETTINGS_KEY);
+    const raw = accountLocalStorage.getItem(WEB_SETTINGS_KEY);
     if (!raw) return webSettings;
     webSettings = normalizeWebSettings(JSON.parse(raw));
   } catch (_) {}
@@ -285,7 +293,7 @@ function loadWebSettingsFromCache() {
 
 function persistWebSettingsCache() {
   try {
-    localStorage.setItem(WEB_SETTINGS_KEY, JSON.stringify(webSettings));
+    accountLocalStorage.setItem(WEB_SETTINGS_KEY, JSON.stringify(webSettings));
   } catch (_) {}
 }
 
@@ -970,6 +978,7 @@ function setAuthFloatLoggedIn(loggedIn) {
 }
 
 async function refreshAuthFloat() {
+ if(window.ZHILE_PRIVATE){setAuthFloatLoggedIn(true);return;}
   try {
     // 桌面模式（127.0.0.1:37777）无认证概念，直接显示未登录
     if (window.location.port === "37777" && window.location.hostname === "127.0.0.1") {
@@ -1381,6 +1390,14 @@ async function requestBrowserDownload(song) {
 
 async function handleDownloadClick(link) {
   if (!link) return false;
+  if (window.ZHILE_MEMBER) {
+    const target = new URL(link.href, window.location.href);
+    target.searchParams.delete("save_local"); target.searchParams.delete("stream");
+    target.searchParams.set("embed", "0");
+    await requestBrowserDownload({url:target.toString()});
+    showToast("浏览器下载", "已交给浏览器处理，可在下载列表或“文件”中查看。", "success", 5000);
+    return true;
+  }
   link.style.pointerEvents = "none";
   link.style.opacity = "0.6";
   try {
@@ -1402,6 +1419,7 @@ let songSortMode = "default";
 let songSortDirection = "desc";
 
 function isAppRoute(pathname) {
+  if (["/account", "/login", "/register", "/logout", "/setup"].some(path => pathname === API_ROOT + path || pathname.startsWith(API_ROOT + path + "/"))) return false;
   return pathname === API_ROOT || pathname.startsWith(`${API_ROOT}/`);
 }
 
@@ -1642,7 +1660,7 @@ function openSongActionSheet(card, trigger) {
   const rank = action => { const index = actionOrder.findIndex(selector=>action.matches(selector)); return index < 0 ? actionOrder.length : index; };
   actions.sort((a,b)=>rank(a)-rank(b));
   const labelFor = action => {
-    if(action.matches(".btn-download")) return "保存到音乐目录";
+    if(action.matches(".btn-download")) return window.ZHILE_MEMBER ? "下载歌曲" : "保存到音乐目录";
     if(action.matches(".btn-browser-download")) return "浏览器另存为";
     if(action.matches(".btn-switch")) return "切换音源";
     if(action.matches(".btn-fav") && !/移出|取消/.test(action.title)) return "添加到歌单";
@@ -5027,11 +5045,11 @@ function maybeAutoCheckUpdate() {
   const key = "musicdl:update_checked_at";
   const now = Date.now();
   try {
-    const last = Number(localStorage.getItem(key) || "0");
+    const last = Number(accountLocalStorage.getItem(key) || "0");
     if (Number.isFinite(last) && now - last < 6 * 60 * 60 * 1000) {
       return;
     }
-    localStorage.setItem(key, String(now));
+    accountLocalStorage.setItem(key, String(now));
   } catch (_) {}
   checkAppUpdate({ silent: true });
 }
@@ -5134,6 +5152,7 @@ async function switchDownloadManagerTab(tab) {
 }
 
 async function loadDownloadQueue(page = downloadQueuePage) {
+ if(window.ZHILE_MEMBER)return;
   if (downloadQueueLoading) return;
   downloadQueueLoading = true;
   downloadQueueLastPoll = Date.now();
@@ -5364,7 +5383,7 @@ let lastPlaybackHistoryAt = 0;
 
 function readPlaybackHistory() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(PLAYBACK_HISTORY_STORAGE_KEY) || "[]");
+    const parsed = JSON.parse(accountLocalStorage.getItem(PLAYBACK_HISTORY_STORAGE_KEY) || "[]");
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((entry) => entry && entry.name && entry.source && entry.id && (!window.ZHILE_LOCAL_ONLY || isLocalMusicSourceValue(entry.source)))
@@ -5376,7 +5395,7 @@ function readPlaybackHistory() {
 
 function writePlaybackHistory(entries) {
   try {
-    localStorage.setItem(
+    accountLocalStorage.setItem(
       PLAYBACK_HISTORY_STORAGE_KEY,
       JSON.stringify(entries.slice(0, PLAYBACK_HISTORY_LIMIT)),
     );
@@ -5498,7 +5517,7 @@ function closePlaybackHistoryModal() {
 async function clearPlaybackHistory() {
   if (!(await confirmNotice("确定清空播放历史？"))) return;
   try {
-    localStorage.removeItem(PLAYBACK_HISTORY_STORAGE_KEY);
+    accountLocalStorage.removeItem(PLAYBACK_HISTORY_STORAGE_KEY);
   } catch (_) {}
   activePlaybackHistoryEntries = [];
   activePlaybackHistoryPage = 1;
@@ -5660,6 +5679,7 @@ async function openLatestUpdatePage(target = "download") {
 }
 
 async function openSystemConfig() {
+ if(window.ZHILE_MEMBER){window.location.href=API_ROOT+"/account";return;}
   const modal = document.getElementById("cookieModal");
   try {
     const [cookiesResponse, settingsResponse] = await Promise.all([
@@ -7003,7 +7023,7 @@ const PLAYER_SPEEDS = Object.freeze([
   0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3,
 ]);
 let playerSpeed = (() => {
-  const saved = Number(localStorage.getItem("musicdl:playbackRate"));
+  const saved = Number(accountLocalStorage.getItem("musicdl:playbackRate"));
   return PLAYER_SPEEDS.includes(saved) ? saved : 1;
 })();
 
@@ -7044,7 +7064,7 @@ function setPlayerPlaybackRate(rate) {
   if (!PLAYER_SPEEDS.includes(normalized)) return;
   playerSpeed = normalized;
   window.playerSpeed = normalized;
-  localStorage.setItem("musicdl:playbackRate", String(normalized));
+  accountLocalStorage.setItem("musicdl:playbackRate", String(normalized));
   if (window.VideoGen) {
     window.VideoGen.playbackRate = normalized;
   }
@@ -7161,7 +7181,7 @@ if (ap?.audio) {
     { order: "list", loop: "one", cls: "mode-one", label: "单曲循环" },
   ];
 
-  let modeIndex = parseInt(localStorage.getItem("musicdl:playmode") || "0", 10);
+  let modeIndex = parseInt(accountLocalStorage.getItem("musicdl:playmode") || "0", 10);
   if (![0, 1, 2].includes(modeIndex)) modeIndex = 0;
 
   function applyMode(idx) {
@@ -7206,7 +7226,7 @@ if (ap?.audio) {
       e.stopPropagation();
       e.preventDefault();
       modeIndex = (modeIndex + 1) % MODES.length;
-      localStorage.setItem("musicdl:playmode", modeIndex);
+      accountLocalStorage.setItem("musicdl:playmode", modeIndex);
       applyMode(modeIndex);
       refresh();
     });
@@ -9351,7 +9371,7 @@ async function removeSongFromCollection(btn, colId, originalSongId, originalSour
 
 // Playback sessions store song metadata, never expiring stream URLs or lyrics.
 // IndexedDB accommodates large libraries without localStorage's small quota.
-const PLAYBACK_SESSION_DB = "musicdl-playback";
+const PLAYBACK_SESSION_DB = "musicdl-playback" + accountStorageSuffix;
 const PLAYBACK_POSITION_KEY = "musicdl:playback-position";
 let playbackSessionDBPromise = null;
 let restoringPlaybackSession = false;
@@ -9414,8 +9434,8 @@ function savePlaybackPosition() {
   if (restoringPlaybackSession || !ap?.list) return;
   const audio = ap.list.audios[ap.list.index];
   try {
-    if (!audio) { localStorage.removeItem(PLAYBACK_POSITION_KEY); return; }
-    localStorage.setItem(PLAYBACK_POSITION_KEY, JSON.stringify({
+    if (!audio) { accountLocalStorage.removeItem(PLAYBACK_POSITION_KEY); return; }
+    accountLocalStorage.setItem(PLAYBACK_POSITION_KEY, JSON.stringify({
       id:String(audio.custom_id), source:audio.source,
       position:Number(ap.audio?.currentTime) || 0,
     }));
@@ -9447,7 +9467,7 @@ async function restorePlaybackSession() {
     const songs = session.songs.filter(song => song && typeof song.id === "string" && song.id && typeof song.source === "string" && song.source && (!window.ZHILE_MEDIA_LOCAL_ONLY || isLocalMusicSourceValue(song.source)));
     if (!songs.length) return;
     let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(PLAYBACK_POSITION_KEY) || "{}"); } catch (_) {}
+    try { saved = JSON.parse(accountLocalStorage.getItem(PLAYBACK_POSITION_KEY) || "{}"); } catch (_) {}
     if (!saved || typeof saved !== "object") saved = {};
     const playlist = songs.map(song => ({...playbackEntryFromSong(song), original_id:song.original_id || song.id, original_source:song.original_source || song.source}));
     const index = Math.max(0, playlist.findIndex(song => song.custom_id === saved.id && song.source === saved.source));

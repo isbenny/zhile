@@ -1155,7 +1155,7 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 		coverURL := strings.TrimSpace(c.Query("cover"))
 		streamPlayback := c.Query("stream") == "1"
 		noRangeRequest := strings.TrimSpace(c.GetHeader("Range")) == ""
-		embedMeta := !streamPlayback && c.Query("embed") == "1" && noRangeRequest
+		embedMeta := !isMember(c) && !streamPlayback && c.Query("embed") == "1" && noRangeRequest
 		saveLocal := !streamPlayback && noRangeRequest && wantsSaveLocal(c)
 		if wantsSaveLocal(c) && !allowSaveLocalRequest(c) {
 			return
@@ -1201,7 +1201,7 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 			}
 
 			webdavError := ""
-			if !result.Skipped && core.WebDAVConfigured(settings) {
+			if !result.Skipped && (!isMember(c) && core.WebDAVConfigured(settings)) {
 				if err := core.UploadSongToWebDAV(settings, result.Filename, result.Data); err != nil {
 					webdavError = err.Error()
 				}
@@ -1234,7 +1234,7 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 			if result.Warning != "" {
 				warnings = append(warnings, result.Warning)
 			}
-			if core.WebDAVConfigured(settings) {
+			if !isMember(c) && core.WebDAVConfigured(settings) {
 				if err := core.UploadSongToWebDAV(settings, result.Filename, result.Data); err != nil {
 					warnings = append(warnings, err.Error())
 				}
@@ -1281,7 +1281,7 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 			}
 			ext := core.DetectAudioExt(finalData)
 			filename := core.BuildDownloadFilename(tempSong, ext, settings.DownloadFilenameTemplate)
-			if !streamPlayback && core.WebDAVConfigured(settings) {
+			if !streamPlayback && (!isMember(c) && core.WebDAVConfigured(settings)) {
 				if err := core.UploadSongToWebDAV(settings, filename, finalData); err != nil {
 					c.Header("X-MusicDL-Warning", err.Error())
 				}
@@ -1351,7 +1351,7 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 		defer resp.Body.Close()
 
 		var bufferedData []byte
-		if core.WebDAVConfigured(settings) && !streamPlayback {
+		if (!isMember(c) && core.WebDAVConfigured(settings)) && !streamPlayback {
 			bufferedData, err = io.ReadAll(resp.Body)
 			if err != nil {
 				c.String(502, "Upstream stream error")
@@ -1454,7 +1454,13 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 		if saveLocal && !allowSaveLocalRequest(c) {
 			return
 		}
-		resp, err := utils.Get(u, utils.WithHeader("User-Agent", core.UA_Common))
+		var resp []byte
+		var err error
+		if isMember(c) {
+			resp, _, err = fetchMemberImage(c.Request.Context(), u)
+		} else {
+			resp, err = utils.Get(u, utils.WithHeader("User-Agent", core.UA_Common))
+		}
 		if err == nil {
 			filename := fmt.Sprintf("%s - %s.jpg", c.Query("name"), c.Query("artist"))
 			if saveLocal {
@@ -1475,7 +1481,14 @@ func RegisterMusicRoutes(api, configAPI *gin.RouterGroup) {
 			return
 		}
 
-		data, contentType, err := core.FetchBytesWithMime(u, strings.TrimSpace(c.Query("source")))
+		var data []byte
+		var contentType string
+		var err error
+		if isMember(c) {
+			data, contentType, err = fetchMemberImage(c.Request.Context(), u)
+		} else {
+			data, contentType, err = core.FetchBytesWithMime(u, strings.TrimSpace(c.Query("source")))
+		}
 		if err != nil || len(data) == 0 {
 			c.Status(http.StatusBadGateway)
 			return

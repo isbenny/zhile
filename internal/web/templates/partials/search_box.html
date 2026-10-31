@@ -4,6 +4,7 @@
         <h1><a href="{{.Root}}/" aria-label="知乐首页"><img src="{{.Root}}/icon.png" alt="" width="36" height="36" style="vertical-align:middle;border-radius:9px"> 知乐</a></h1>
         <nav class="desktop-app-nav" aria-label="主导航"><a href="{{.Root}}/" data-main-tab="home">首页</a><a href="{{.Root}}/?view=search" data-main-tab="search">搜索</a><a href="{{.Root}}/my_collections" data-main-tab="library">我的音乐</a></nav>
         <div class="mobile-header-actions">
+ {{if .PrivateMode}}<a href="{{.Root}}/account" aria-label="我的账号" style="color:inherit;padding:10px"><i class="fa-regular fa-user" aria-hidden="true"></i></a>{{end}}
             <button type="button" onclick="openSystemConfig()" aria-label="系统配置"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
             <button type="button" onclick="openDownloadRecordsModal()" aria-label="下载管理"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
             <button type="button" onclick="toggleMobileUtilities(this)" aria-label="更多功能" aria-controls="utility-toolbar" aria-expanded="false"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>

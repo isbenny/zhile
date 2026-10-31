@@ -41,6 +41,7 @@ var (
 // Manual collections persist songs in SavedSong. Imported entries only keep
 // metadata and fetch songs on demand from the upstream source.
 type Collection struct {
+	OwnerID     uint        `gorm:"not null;default:0;index" json:"-"`
 	ID          uint        `gorm:"primaryKey" json:"id"`
 	Name        string      `gorm:"not null" json:"name"`
 	SystemKey   *string     `gorm:"uniqueIndex" json:"system_key,omitempty"`
@@ -116,7 +117,7 @@ func (c Collection) isManual() bool {
 }
 
 func (c Collection) isLiked() bool {
-	return c.SystemKey != nil && *c.SystemKey == "liked"
+	return c.SystemKey != nil && (*c.SystemKey == "liked" || strings.HasPrefix(*c.SystemKey, "liked:"))
 }
 
 func (c Collection) editable() bool {
@@ -194,7 +195,7 @@ func InitDB() {
 		panic("Failed to connect to SQLite: " + err.Error())
 	}
 
-	if err := db.AutoMigrate(&Collection{}, &SavedSong{}, &LocalMusicIndex{}); err != nil {
+	if err := db.AutoMigrate(&Collection{}, &SavedSong{}, &LocalMusicIndex{}, &WebMember{}, &WebInvitation{}); err != nil {
 		panic("Failed to migrate database: " + err.Error())
 	}
 
@@ -355,7 +356,7 @@ func countSavedSongs(collectionID uint) int {
 
 func loadCollection(collectionID string) (*Collection, error) {
 	var collection Collection
-	if err := db.First(&collection, collectionID).Error; err != nil {
+	if err := db.Where("owner_id = 0").First(&collection, collectionID).Error; err != nil {
 		return nil, err
 	}
 	return &collection, nil
@@ -616,7 +617,7 @@ func collectionSongsJSON(collection *Collection) ([]gin.H, error) {
 func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	api.GET("/my_collections", func(c *gin.Context) {
 		var collections []Collection
-		if err := db.Order("id DESC").Find(&collections).Error; err != nil {
+		if err := ownedCollections(c).Order("id DESC").Find(&collections).Error; err != nil {
 			renderIndex(c, nil, nil, "我的本地歌单", nil, "获取本地歌单失败", "playlist", "", "", "", true, "", nil)
 			return
 		}
@@ -643,7 +644,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 			return
 		}
 
-		collection, err := loadCollection(id)
+		collection, err := loadOwnedCollection(c, id)
 		if err != nil {
 			renderIndex(c, nil, nil, "", nil, "本地歌单不存在", "song", "", "", "", false, "", nil)
 			return
@@ -675,7 +676,10 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 			return
 		}
 		key := "liked"
-		collection := Collection{Name: "我喜欢的音乐", SystemKey: &key, Kind: collectionKindManual, ContentType: collectionContentPlaylist, Source: "local"}
+		if owner := collectionOwner(c); owner != 0 {
+			key = fmt.Sprintf("liked:%d", owner)
+		}
+		collection := Collection{OwnerID: collectionOwner(c), Name: "我喜欢的音乐", SystemKey: &key, Kind: collectionKindManual, ContentType: collectionContentPlaylist, Source: "local"}
 		if err := db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "system_key"}}, DoNothing: true}).Create(&collection).Error; err != nil {
 			c.JSON(500, gin.H{"error": "暂时无法打开我喜欢的音乐"})
 			return
@@ -690,7 +694,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	colAPI.GET("", func(c *gin.Context) {
 		var collections []Collection
 
-		query := db.Order("id DESC")
+		query := ownedCollections(c).Order("id DESC")
 		if c.Query("include_imported") != "1" {
 			query = query.Where("kind = ? OR kind = '' OR kind IS NULL", collectionKindManual)
 		}
@@ -709,6 +713,9 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 			return
 		}
 
+		req.ID = 0
+		req.SavedSongs = nil
+		req.OwnerID = collectionOwner(c)
 		req.Name = strings.TrimSpace(req.Name)
 		req.Description = strings.TrimSpace(req.Description)
 		req.Cover = strings.TrimSpace(req.Cover)
@@ -741,8 +748,9 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 			return
 		}
 
+		collection.OwnerID = collectionOwner(c)
 		var existing Collection
-		err = db.Where(
+		err = ownedCollections(c).Where(
 			"kind = ? AND content_type = ? AND source = ? AND external_id = ?",
 			collectionKindImported,
 			collection.ContentType,
@@ -772,7 +780,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	colAPI.PUT("/:id", func(c *gin.Context) {
 		id := c.Param("id")
 
-		existing, err := loadCollection(id)
+		existing, err := loadOwnedCollection(c, id)
 		if err != nil {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return
@@ -814,7 +822,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 			return
 		}
 		var existing Collection
-		if err := db.First(&existing, uint(id)).Error; err != nil {
+		if err := ownedCollections(c).First(&existing, uint(id)).Error; err != nil {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return
 		}
@@ -847,7 +855,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	})
 
 	colAPI.GET("/:id/songs", func(c *gin.Context) {
-		collection, err := loadCollection(c.Param("id"))
+		collection, err := loadOwnedCollection(c, c.Param("id"))
 		if err != nil {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return
@@ -862,7 +870,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	})
 
 	colAPI.POST("/:id/songs", func(c *gin.Context) {
-		collection, err := loadCollection(c.Param("id"))
+		collection, err := loadOwnedCollection(c, c.Param("id"))
 		if err != nil {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return
@@ -913,7 +921,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	})
 
 	colAPI.POST("/:id/songs/batch", func(c *gin.Context) {
-		collection, err := loadCollection(c.Param("id"))
+		collection, err := loadOwnedCollection(c, c.Param("id"))
 		if err != nil {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return
@@ -986,7 +994,7 @@ func RegisterCollectionRoutes(api *gin.RouterGroup) {
 	})
 
 	colAPI.DELETE("/:id/songs", func(c *gin.Context) {
-		collection, err := loadCollection(c.Param("id"))
+		collection, err := loadOwnedCollection(c, c.Param("id"))
 		if err != nil {
 			c.JSON(404, gin.H{"error": "歌单不存在"})
 			return

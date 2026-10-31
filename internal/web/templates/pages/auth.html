@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="referrer" content="no-referrer">
+    <meta name="referrer" content="same-origin">
     <title>{{.Title}}</title>
     <link rel="icon" href="{{.Root}}/icon.png" type="image/png">
     <link rel="apple-touch-icon" href="{{.Root}}/icon.png">
@@ -22,7 +22,9 @@
             <span>知乐</span>
         </a>
         <h1>{{.Title}}</h1>
-        {{ if .PrivateMode }}
+        {{ if eq .Mode "register" }}
+ <p class="auth-hint">使用朋友分享的邀请码，创建你自己的账号。歌单与收藏相互独立。</p>
+ {{ else if .PrivateMode }}
         <p class="auth-hint">这是个人音乐空间。只有完成账号设置并登录后，才能搜索、播放和访问歌单。</p>
         {{ else if eq .Mode "setup" }}
         <p class="auth-hint">首次打开系统配置需要创建本地管理员账号，用来保护 Cookie 和系统设置。</p>
@@ -49,25 +51,28 @@
                 <code>Select-String "Web setup token"</code>。
             </p>
             {{ end }}
-            <label class="auth-field">
+            {{if eq .Mode "register"}}<label class="auth-field"><span>邀请码</span><input name="invite_code" required autocomplete="off" maxlength="128"></label><p class="auth-field-hint">用户名使用 3–32 位英文字母、数字或下划线。密码至少 10 位。</p>{{end}}
+ <label class="auth-field">
                 <span>用户名</span>
                 <input type="text" name="username"{{ if eq .Mode "setup" }} value="{{.Username}}" autocomplete="username"{{ else }} autocomplete="off"{{ end }} required autofocus>
             </label>
             <label class="auth-field">
                 <span>密码</span>
-                <input type="password" name="password" autocomplete="{{ if eq .Mode "setup" }}new-password{{ else }}current-password{{ end }}" minlength="6" required>
+                <input type="password" name="password" autocomplete="{{ if eq .Mode "login" }}current-password{{ else }}new-password{{ end }}" minlength="{{if eq .Mode "register"}}10{{else}}6{{end}}" maxlength="72" required>
             </label>
-            {{ if eq .Mode "setup" }}
+            {{ if ne .Mode "login" }}
             <label class="auth-field">
                 <span>确认密码</span>
-                <input type="password" name="password_confirm" autocomplete="new-password" minlength="6" required>
+                <input type="password" name="password_confirm" autocomplete="new-password" minlength="{{if eq .Mode "register"}}10{{else}}6{{end}}" maxlength="72" required>
             </label>
             {{ end }}
-            <button type="submit" class="search-btn auth-submit">
+            {{if eq .Mode "register"}}<p class="auth-field-hint">账号名和歌单保存在服务器。<a href="https://music.cnxwkj.com/legal.html#privacy" target="_blank" rel="noopener" style="color:#1ed760">查看隐私与使用说明</a></p>{{end}}
+ <button type="submit" class="search-btn auth-submit">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 <span>{{.Button}}</span>
             </button>
         </form>
+ {{if .PrivateMode}}<p class="auth-hint">{{if eq .Mode "login"}}收到邀请码？<a href="{{.Root}}/register" style="color:#1ed760">注册自己的账号</a>{{else if eq .Mode "register"}}已有账号？<a href="{{.Root}}/login" style="color:#1ed760">登录知乐</a>{{end}}</p>{{end}}
     </section>
 </main>
 </body>
