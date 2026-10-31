@@ -1,12 +1,14 @@
 package web
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -18,6 +20,7 @@ import (
 	"github.com/guohuiyuan/go-music-dl/core"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // The original administrator remains in WebAuthSettings. Owner 0 preserves all
@@ -114,6 +117,27 @@ func formSameOrigin(c *gin.Context) bool {
 func tokenDigest(s string) string {
 	h := sha256.Sum256([]byte(strings.TrimSpace(s)))
 	return hex.EncodeToString(h[:])
+}
+
+// Never reuse a previous code, even after expiry, so an old shared code cannot
+// accidentally become valid again. The unique index also protects concurrent creation.
+func createInvitation() (string, error) {
+	for attempt := 0; attempt < 32; attempt++ {
+		n, err := rand.Int(rand.Reader, big.NewInt(900000))
+		if err != nil {
+			return "", err
+		}
+		code := strconv.FormatInt(n.Int64()+100000, 10)
+		inv := WebInvitation{TokenHash: tokenDigest(code), ExpiresAt: time.Now().Add(7 * 24 * time.Hour)}
+		result := db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "token_hash"}}, DoNothing: true}).Create(&inv)
+		if result.Error != nil {
+			return "", result.Error
+		}
+		if result.RowsAffected == 1 {
+			return code, nil
+		}
+	}
+	return "", errors.New("邀请码暂时无法生成，请稍后再试")
 }
 
 var memberNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{2,31}$`)
@@ -333,13 +357,8 @@ func bindAccountRoutes(api *gin.RouterGroup) {
 			renderAccount(c, "未使用邀请码已达 100 个，请先撤销旧邀请码", "")
 			return
 		}
-		code, err := randomToken(24)
+		code, err := createInvitation()
 		if err != nil {
-			c.Status(500)
-			return
-		}
-		inv := WebInvitation{TokenHash: tokenDigest(code), ExpiresAt: time.Now().Add(7 * 24 * time.Hour)}
-		if db.Create(&inv).Error != nil {
 			c.Status(500)
 			return
 		}

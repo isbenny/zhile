@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -262,5 +263,52 @@ func TestMemberIdentityAndPasswordRotation(t *testing.T) {
 	updated, err := memberAccount(m.Username)
 	if err != nil || bcrypt.CompareHashAndPassword([]byte(updated.PasswordHash), []byte("replacement-test-123")) != nil {
 		t.Fatal("password not updated")
+	}
+}
+
+func TestSixDigitInvitationGenerationAndRegistration(t *testing.T) {
+	r, admin := memberTestSetup(t)
+	w := memberReq(r, "POST", "/admin/invites", admin, "", "")
+	match := regexp.MustCompile(`<code class="invite-code">([1-9][0-9]{5})</code>`).FindStringSubmatch(w.Body.String())
+	if w.Code != 200 || len(match) != 2 {
+		t.Fatalf("missing six-digit invitation: %d", w.Code)
+	}
+	code := match[1]
+	var inv WebInvitation
+	if err := db.Where("token_hash = ?", tokenDigest(code)).First(&inv).Error; err != nil {
+		t.Fatal(err)
+	}
+	remaining := time.Until(inv.ExpiresAt)
+	if remaining < 7*24*time.Hour-time.Minute || remaining > 7*24*time.Hour {
+		t.Fatal("wrong expiry")
+	}
+	w = memberReq(r, "GET", "/account", admin, "", "")
+	if strings.Contains(w.Body.String(), code) || !strings.Contains(w.Body.String(), "不是邀请码") {
+		t.Fatal("history exposes code or has ambiguous labels")
+	}
+	body := url.Values{"username": {"numeric_friend"}, "password": {"test-password-123"}, "password_confirm": {"test-password-123"}, "invite_code": {code}}
+	if w = memberReq(r, "POST", "/register", "", body.Encode(), "application/x-www-form-urlencoded"); w.Code != 303 {
+		t.Fatal("numeric registration failed", w.Code)
+	}
+	if _, err := registerMember(code, "another_friend", "test-password-123"); err == nil {
+		t.Fatal("code reused")
+	}
+	seen := map[string]bool{code: true}
+	for i := 0; i < 30; i++ {
+		next, err := createInvitation()
+		if err != nil || !regexp.MustCompile(`^[1-9][0-9]{5}$`).MatchString(next) || seen[next] {
+			t.Fatal("invalid or duplicate code", err)
+		}
+		seen[next] = true
+	}
+}
+
+func TestInvitationGuessingIsRateLimited(t *testing.T) {
+	r, _ := memberTestSetup(t)
+	body := url.Values{"username": {"guess_friend"}, "password": {"test-password-123"}, "password_confirm": {"test-password-123"}, "invite_code": {"000000"}}
+	memberReq(r, "POST", "/register", "", body.Encode(), "application/x-www-form-urlencoded")
+	w := memberReq(r, "POST", "/register", "", body.Encode(), "application/x-www-form-urlencoded")
+	if w.Code != 429 {
+		t.Fatalf("repeat guess not throttled: %d", w.Code)
 	}
 }

@@ -51,7 +51,7 @@
                 <code>Select-String "Web setup token"</code>。
             </p>
             {{ end }}
-            {{if eq .Mode "register"}}<label class="auth-field"><span>邀请码</span><input name="invite_code" required autocomplete="off" maxlength="128"></label><p class="auth-field-hint">用户名使用 3–32 位英文字母、数字或下划线。密码至少 10 位。</p>{{end}}
+            {{if eq .Mode "register"}}<label class="auth-field"><span>邀请码</span><input name="invite_code" required autocomplete="off" inputmode="numeric" placeholder="输入 6 位邀请码" maxlength="128"></label><p class="auth-field-hint">用户名使用 3–32 位英文字母、数字或下划线。密码至少 10 位。</p>{{end}}
  <label class="auth-field">
                 <span>用户名</span>
                 <input type="text" name="username"{{ if eq .Mode "setup" }} value="{{.Username}}" autocomplete="username"{{ else }} autocomplete="off"{{ end }} required autofocus>
